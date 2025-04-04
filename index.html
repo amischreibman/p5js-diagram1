@@ -6,7 +6,12 @@
   <title>Interactive Diagram</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <style>
-         // === הגדרות בסיס ===
+  
+  </style>
+</head>
+<body>
+  <script src="sketch.js">
+               // === הגדרות בסיס ===
       let hoverAnimationDuration = 300; // מהירות הגדילה/התכווצות של ריחוף (במילישניות)
       let status2ShrinkDuration = 3500; // משך אנימציית ההתכווצות בסטטוס 2 (במילישניות)
       let status2CenterOffset = 100; // כמה לזוז הצידה בסטטוס 2
@@ -587,9 +592,6 @@
       function distFunc(x1, y1, x2, y2) {
         return sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
       }
-  </style>
-</head>
-<body>
-  <script src="sketch.js"></script>
+  </script>
 </body>
 </html>
