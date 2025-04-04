@@ -557,16 +557,18 @@ function resetPositions() {
 }
 
 function handleHover() {
-  for (let i = 0; i < surroundingNodes.length; i++) {
-    let node = surroundingNodes[i];
-    let dx = mouseX - node.currentX;
-    let dy = mouseY - node.currentY;
-    let isHovering = dist(0, 0, dx, dy) < node.currentR / 2;
-    let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
-    if (node.hoverTargetR !== newTargetR) {
-      hoverStartTimes[i] = millis();
+  if (surroundingNodes && surroundingNodes.length > 0) { // הוספת תנאי לבדיקה
+    for (let i = 0; i < surroundingNodes.length; i++) {
+      let node = surroundingNodes[i];
+      let dx = mouseX - node.currentX;
+      let dy = mouseY - node.currentY;
+      let isHovering = dist(0, 0, dx, dy) < node.currentR / 2;
+      let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
+      if (node.hoverTargetR !== newTargetR) {
+        hoverStartTimes[i] = millis();
+      }
+      node.hoverTargetR = newTargetR;
     }
-    node.hoverTargetR = newTargetR;
   }
 }
 
