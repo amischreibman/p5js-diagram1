@@ -133,7 +133,9 @@ function initNodes() {
 }
 
 function draw() {
-  handleHover();
+  if (surroundingNodes && surroundingNodes.length > 0) { // הוספת בדיקה
+    handleHover();
+  }
   background('#F2A900');
   drawingContext.imageSmoothingEnabled = true;
 
@@ -163,7 +165,7 @@ function draw() {
       let isFocused = (status === 2 && i === focusedNodeIndex);
       let isReturning = (status !== 2 && i === focusedNodeIndex);
       let hoverElapsed = (isFocused || isReturning) ? (millis() - transitionStartTime) : (millis() - hoverStartTimes[i]);
-      let hoverDuration = (isFocused || isReturning) ? status2GrowDuration : hoverAnimationDuration; // שימוש במשתנה החדש
+      let hoverDuration = (isFocused || isReturning) ? status2GrowDuration : hoverAnimationDuration;
       let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
       let easeHover = ultraEaseInOut(tHover);
       node.currentR = lerp(node.currentR, targetR, easeHover);
@@ -250,7 +252,7 @@ function draw() {
     
     // הוספת צל לטקסט לשיפור הקריאות
     drawingContext.shadowColor = textShadowColor;
-    drawingContext.shadowBlur = textShadowBlur * 1.5; // קצת יותר עוצמתי לעיגול המרכזי
+    drawingContext.shadowBlur = textShadowBlur * 1.5;
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
     
@@ -284,11 +286,6 @@ function draw() {
       } else {
         if (node.hoverTargetR !== undefined) {
           targetR = node.hoverTargetR;
-          let hoverElapsed = millis() - hoverStartTimes[i];
-          let tHover = constrain(hoverElapsed / hoverAnimationDuration, 0, 1);
-          let easeHover = ultraEaseInOut(tHover);
-          node.currentR = lerp(node.currentR, targetR, easeHover);
-        } else {
           let hoverElapsed = millis() - hoverStartTimes[i];
           let tHover = constrain(hoverElapsed / hoverAnimationDuration, 0, 1);
           let easeHover = ultraEaseInOut(tHover);
@@ -557,18 +554,16 @@ function resetPositions() {
 }
 
 function handleHover() {
-  if (surroundingNodes && surroundingNodes.length > 0) { // הוספת תנאי לבדיקה
-    for (let i = 0; i < surroundingNodes.length; i++) {
-      let node = surroundingNodes[i];
-      let dx = mouseX - node.currentX;
-      let dy = mouseY - node.currentY;
-      let isHovering = dist(0, 0, dx, dy) < node.currentR / 2;
-      let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
-      if (node.hoverTargetR !== newTargetR) {
-        hoverStartTimes[i] = millis();
-      }
-      node.hoverTargetR = newTargetR;
+  for (let i = 0; i < surroundingNodes.length; i++) {
+    let node = surroundingNodes[i];
+    let dx = mouseX - node.currentX;
+    let dy = mouseY - node.currentY;
+    let isHovering = dist(0, 0, dx, dy) < node.currentR / 2;
+    let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
+    if (node.hoverTargetR !== newTargetR) {
+      hoverStartTimes[i] = millis();
     }
+    node.hoverTargetR = newTargetR;
   }
 }
 
