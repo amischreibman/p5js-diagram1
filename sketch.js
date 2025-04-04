@@ -1,3 +1,137 @@
+// === הגדרות בסיס ===
+let hoverAnimationDuration = 300; // מהירות הגדילה/התכווצות של ריחוף (במילישניות)
+let status2ShrinkDuration = 3500; // משך אנימציית ההתכווצות בסטטוס 2 (במילישניות)
+let status2CenterOffset = 100; // כמה לזוז הצידה בסטטוס 2
+let status2CenterShrinkFactor = 0.4; // כמה להתכווץ בסטטוס 2 (אחוז מגודלו)
+let status1ExpandedSize = 300; // גודל היעד של העיגול המרכזי במצב סטטוס 1
+let status2GrowDuration = 2500; // משך הגדילה של עיגול היקפי שנלחץ עליו בסטטוס 2
+let status2ExpandedSize = 300; // גודל היעד של עיגול היקפי בסטטוס 2
+let easeInPower = 4;   // שליטה בכמות ה-ease in
+let easeOutPower = 10;  // שליטה בכמות ה-ease out
+let status1ExpansionAmount = 100; // שליטה בגודל ההתרחקות של העיגולים ההיקפיים בסטטוס 1
+let status1CenterDelay = 0; // דיליי בין תחילת התרחקות ההיקפיים לבין הגדילה של העיגול המרכזי
+let status2DelayRandomRange = [4, 20]; // טווח רנדומלי לדיליי בין עיגולים בסטטוס 2
+let status1DelayRandomRange = [4, 20]; // טווח רנדומלי לדיליי בין עיגולים במעבר לסטטוס 1
+let centerGrowDuration = 1800;       // שליטה במהירות הגדילה של העיגול המרכזי
+let surroundingMoveDuration = 2500; // שליטה במהירות ההתרחקות של עיגולים היקפיים
+
+let baseDistance = 150;
+let wiggleSpeed = 0.01;
+let wiggleRadius = 20;
+
+// הגדרות חדשות לשיפור הטקסט
+let textShadowBlur = 0; // עוצמת הטשטוש של הצל לטקסט
+let textShadowColor = 'white'; // צבע הצל לטקסט
+let textMaxSizePercentage = 0.6; // אחוז מקסימלי של גודל הטקסט ביחס לרדיוס העיגול
+
+let centerNode;
+let surroundingNodes = [];
+let status = 0;
+let focusedNodeIndex = null;
+let transitionStartTime = 0;
+let escapePositions = [];
+let hoverStartTimes = []; // זמנים לריחוף
+let winkyFont;
+let focusSwitchTimer = null; // טיימר לדיליי בהחלפת פוקוס
+let pendingFocusedIndex = null; // אינדקס של העיגול שממתין לקבל פוקוס
+let isFocusSwitching = false; // דגל למעבר בין פוקוסים
+
+let BlinkyStar; // שימוש בשם הפונט החדש
+
+function preload() {
+  // ניסיון לטעון את הפונט המועדף
+  try {
+    BlinkyStar = loadFont('Blinky Star.otf'); // ודא ששם הקובץ תואם
+  } catch(e) {
+    console.log("לא ניתן לטעון את הפונט, משתמש בפונט ברירת המחדל");
+  }
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+  initNodes();
+  
+  // הגדרת פונט עם פתרון חלופי
+  if (BlinkyStar) {
+    textFont(BlinkyStar);
+  } else {
+    textFont('arial');
+  }
+  
+  textAlign(CENTER, CENTER);
+  
+  // הגדרות נוספות לשיפור הטקסט
+  drawingContext.textBaseline = 'middle';
+  drawingContext.textAlign = 'center';
+  pixelDensity(1); // אחידות בפיקסל דנסיטי
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  initNodes();
+}
+
+function initNodes() {
+  hoverStartTimes = [];
+  surroundingNodes = [];
+  escapePositions = [];
+  focusedNodeIndex = null;
+  status = 0;
+
+  centerNode = {
+    baseX: width / 2,
+    baseY: height / 2,
+    r: 180,
+    currentR: 180,
+    col: color(0, 102, 255),
+    angleOffset: random(1000),
+    targetX: width / 2,
+    targetY: height / 2,
+    currentX: width / 2,
+    currentY: width / 2,
+    label: 'text 0' // הוספת תווית לעיגול המרכזי
+  };
+
+  let maxTries = 1000;
+  while (surroundingNodes.length < 10 && maxTries > 0) {
+    maxTries--;
+    let angle = random(TWO_PI);
+    let dist = random(baseDistance, baseDistance + 100);
+    let r = random(50, 80) * 1.25;
+    let x = centerNode.baseX + cos(angle) * dist;
+    let y = centerNode.baseY + sin(angle) * dist;
+
+    let overlaps = false;
+    for (let other of surroundingNodes) {
+      let d = distFunc(x, y, other.baseX, other.baseY);
+      if (d < r / 2 + other.r / 2 + 20) {
+        overlaps = true;
+        break;
+      }
+    }
+    if (overlaps) continue;
+
+    hoverStartTimes.push(0);
+    surroundingNodes.push({
+      angle,
+      r,
+      col: color(random(255), random(255), random(255)),
+      angleOffset: random(1000),
+      baseX: x,
+      baseY: y,
+      currentX: x,
+      currentY: y,
+      targetX: x,
+      targetY: y,
+      currentR: r,
+      baseR: r,
+      expandedR: r * 4,
+      label: `text ${surroundingNodes.length + 1}` // הוספת תווית
+    });
+  }
+}
+
 function draw() {
   handleHover();
   background('#F2A900');
@@ -29,7 +163,7 @@ function draw() {
       let isFocused = (status === 2 && i === focusedNodeIndex);
       let isReturning = (status !== 2 && i === focusedNodeIndex);
       let hoverElapsed = (isFocused || isReturning) ? (millis() - transitionStartTime) : (millis() - hoverStartTimes[i]);
-      let hoverDuration = (isFocused || isReturning) ? status2GrowDuration : hoverAnimationDuration;
+      let hoverDuration = (isFocused || isReturning) ? status2GrowDuration : hoverAnimationDuration; // שימוש במשתנה החדש
       let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
       let easeHover = ultraEaseInOut(tHover);
       node.currentR = lerp(node.currentR, targetR, easeHover);
@@ -116,7 +250,7 @@ function draw() {
     
     // הוספת צל לטקסט לשיפור הקריאות
     drawingContext.shadowColor = textShadowColor;
-    drawingContext.shadowBlur = textShadowBlur * 1.5;
+    drawingContext.shadowBlur = textShadowBlur * 1.5; // קצת יותר עוצמתי לעיגול המרכזי
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
     
@@ -150,6 +284,11 @@ function draw() {
       } else {
         if (node.hoverTargetR !== undefined) {
           targetR = node.hoverTargetR;
+          let hoverElapsed = millis() - hoverStartTimes[i];
+          let tHover = constrain(hoverElapsed / hoverAnimationDuration, 0, 1);
+          let easeHover = ultraEaseInOut(tHover);
+          node.currentR = lerp(node.currentR, targetR, easeHover);
+        } else {
           let hoverElapsed = millis() - hoverStartTimes[i];
           let tHover = constrain(hoverElapsed / hoverAnimationDuration, 0, 1);
           let easeHover = ultraEaseInOut(tHover);
