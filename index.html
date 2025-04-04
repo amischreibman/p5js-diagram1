@@ -28,6 +28,7 @@
 
     let centerNode;
     let surroundingNodes = [];
+    let focusedNodeIndex = null; // חדש: משתנה לשמירת העיגול שנלחץ
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
@@ -47,6 +48,7 @@
 
     function initNodes() {
       surroundingNodes = [];
+      focusedNodeIndex = null;
 
       centerNode = {
         baseX: width / 2,
@@ -89,7 +91,8 @@
       background('#F2A900');
 
       // draw surrounding nodes
-      for (let node of surroundingNodes) {
+      for (let i = 0; i < surroundingNodes.length; i++) {
+        let node = surroundingNodes[i];
         let offsetX = cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
         let offsetY = sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
 
@@ -110,6 +113,14 @@
         drawingContext.shadowColor = textShadowColor;
         drawingContext.shadowBlur = textShadowBlur;
         text(node.title, node.currentX + offsetX, node.currentY + offsetY);
+
+        // אם זה העיגול שנבחר – נציג גם את הטקסט המורחב
+        if (focusedNodeIndex === i) {
+          textAlign(CENTER, TOP);
+          textSize(14);
+          text(node.bodyText, node.currentX + offsetX, node.currentY + offsetY + node.r / 2 + 10, 180);
+        }
+
         pop();
       }
 
@@ -128,6 +139,20 @@
       textSize(24);
       text(centerNode.label, centerNode.baseX + centerOffsetX, centerNode.baseY + centerOffsetY);
       pop();
+    }
+
+    function mousePressed() {
+      for (let i = 0; i < surroundingNodes.length; i++) {
+        let node = surroundingNodes[i];
+        let dx = mouseX - node.currentX;
+        let dy = mouseY - node.currentY;
+        if (dist(0, 0, dx, dy) < node.r / 2) {
+          focusedNodeIndex = i;
+          return;
+        }
+      }
+      // אם לוחצים על מקום ריק – ביטול הפוקוס
+      focusedNodeIndex = null;
     }
 
     function distFunc(x1, y1, x2, y2) {
