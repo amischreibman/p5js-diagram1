@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Diagram</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Diagram</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 // === הגדרות בסיס ===
 let hoverAnimationDuration = 300; // מהירות הגדילה/התכווצות של ריחוף (במילישניות)
 let status2ShrinkDuration = 3500; // משך אנימציית ההתכווצות בסטטוס 2 (במילישניות)
@@ -43,12 +43,12 @@ let focusSwitchTimer = null; // טיימר לדיליי בהחלפת פוקוס
 let pendingFocusedIndex = null; // אינדקס של העיגול שממתין לקבל פוקוס
 let isFocusSwitching = false; // דגל למעבר בין פוקוסים
 
-let thisCafeFont; // שינוי שם המשתנה
+let BlinkyStar; // שימוש בשם הפונט החדש
 
 function preload() {
   // ניסיון לטעון את הפונט המועדף
   try {
-    BlinkyStar = loadFont('Blinky Star.otf');
+    BlinkyStar = loadFont('Blinky Star.otf'); // ודא ששם הקובץ תואם
   } catch(e) {
     console.log("לא ניתן לטעון את הפונט, משתמש בפונט ברירת המחדל");
   }
@@ -586,6 +586,6 @@ function ultraEaseInOut(t) {
 function distFunc(x1, y1, x2, y2) {
   return sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 }
-  </script>
+  <script src="sketch.js"></script>
 </body>
 </html>
