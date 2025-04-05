@@ -133,7 +133,7 @@ function initNodes() {
 }
 
 function draw() {
-  if (surroundingNodes && surroundingNodes.length > 0) { // הוספת בדיקה
+  if (surroundingNodes && surroundingNodes.length > 0) {
     handleHover();
   }
   background('#F2A900');
