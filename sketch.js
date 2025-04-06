@@ -12,10 +12,8 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let titleContentPadding = 30; // רווח בין הכותרת לתוכן
-let paragraphPadding = 20; // רווח פנימי בתוך תיבת הטקסט
-let minFontSize = 12; // גודל מינימלי לפונט
-let maxFontSize = 24; // גודל מקסימלי לפונט
+let textContentPadding = 30; // רווח רגיל לעיגולים מקיפים
+let centerTextPadding = 70;  // רווח בין כותרת לתוכן עבור העיגול המרכזי
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
@@ -51,6 +49,12 @@ let isFocusSwitching = false;
 let BlinkyStar;
 let previousFocusedIndex = null;
 
+// === סליידר לשליטה ברווח ===
+let paddingSlider;
+let paddingLabel;
+let minPadding = 10;
+let maxPadding = 150;
+
 // === תוכן נוסף לעיגולים ===
 let defaultContent = "This is a paragraph of sample text that will appear when the circle is focused.";
 
@@ -78,11 +82,28 @@ function setup() {
   drawingContext.textBaseline = 'middle';
   drawingContext.textAlign = 'center';
   pixelDensity(1);
+  
+  // יצירת סליידר לשליטה ברווח
+  paddingSlider = createSlider(minPadding, maxPadding, centerTextPadding);
+  paddingSlider.position(20, 20);
+  paddingSlider.style('width', '200px');
+  
+  // הוספת תווית לסליידר
+  paddingLabel = createDiv('Center Text Padding: ' + centerTextPadding);
+  paddingLabel.position(230, 20);
+  paddingLabel.style('color', 'white');
+  paddingLabel.style('background-color', 'rgba(0, 0, 0, 0.5)');
+  paddingLabel.style('padding', '5px');
+  paddingLabel.style('border-radius', '5px');
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   initNodes();
+  
+  // עדכון מיקום הסליידר והתווית
+  paddingSlider.position(20, 20);
+  paddingLabel.position(230, 20);
 }
 
 function initNodes() {
@@ -102,11 +123,12 @@ function initNodes() {
     targetY: height / 2,
     currentX: width / 2,
     currentY: width / 2,
-    label: 'Center Node',
+    label: 'text 0',
     content: "This is the main central node. It contains important information about the core concept. Click on surrounding nodes to explore related topics.",
-    contentAlpha: 0,
-    expandedR: centerDefaultSize * growthMultiplier
+    contentAlpha: 0
   };
+
+  centerNode.expandedR = centerDefaultSize * growthMultiplier;
 
   let maxTries = 1000;
   while (surroundingNodes.length < 10 && maxTries > 0) {
@@ -152,7 +174,7 @@ function initNodes() {
       targetY: y,
       currentR: r,
       baseR: r,
-      label: `Node ${nodeIndex}`,
+      label: `text ${nodeIndex}`,
       content: nodeContent,
       contentAlpha: 0,
       expandedR: status2MinExpandedSize
@@ -163,35 +185,28 @@ function initNodes() {
 }
 
 function updateCircleSizesBasedOnContent() {
-  for (let node of [...surroundingNodes, centerNode]) {
+  for (let i = 0; i < surroundingNodes.length; i++) {
+    let node = surroundingNodes[i];
     let textLength = node.content.length;
+
     let minTextLength = 50;
-    let maxTextLength = 500;
-    
+    let maxTextLength = 300;
+
     let normalizedLength = constrain(textLength, minTextLength, maxTextLength);
     let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
-    
-    node.expandedR = status2MinExpandedSize + (sizeRange * sizeRatio);
-    console.log(`Circle ${node.label}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
-  }
-}
 
-function calculateDynamicFontSize(text, maxWidth, maxHeight) {
-  let fontSize = maxFontSize;
-  textSize(fontSize);
-  
-  while (textWidth(text) > maxWidth - paragraphPadding * 2 || 
-         textAscent() + textDescent() > maxHeight - paragraphPadding * 2) {
-    fontSize -= 0.5;
-    if (fontSize <= minFontSize) break;
-    textSize(fontSize);
+    node.expandedR = status2MinExpandedSize + (sizeRange * sizeRatio);
+
+    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
-  
-  return fontSize;
 }
 
 function draw() {
+  // עדכון ערך ה-padding לפי הסליידר
+  centerTextPadding = paddingSlider.value();
+  paddingLabel.html('Center Text Padding: ' + centerTextPadding);
+  
   let expandedSize = centerDefaultSize * growthMultiplier;
 
   background('#F2A900');
@@ -202,7 +217,7 @@ function draw() {
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
 
-  let centerTargetR = status === 1 ? centerNode.expandedR : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
+  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
@@ -300,22 +315,13 @@ function draw() {
         push();
         fill(0, centerNode.contentAlpha);
         noStroke();
+        textSize(16);
         textAlign(CENTER, CENTER);
-        
-        // חישוב גודל פונט דינמי
-        let fontSize = calculateDynamicFontSize(centerNode.content, centerNode.currentR * 0.7, centerNode.currentR * 0.6);
-        textSize(fontSize);
-        
-        // הצגת התוכן עם פדינג
-        let contentY = centerDisplayY + titleOffset + fontSize + titleContentPadding;
-        let contentWidth = centerNode.currentR * 0.8 - paragraphPadding * 2;
-        let contentHeight = centerNode.currentR * 0.6 - paragraphPadding * 2;
-        
-        text(centerNode.content, 
-             centerDisplayX, 
-             contentY, 
-             contentWidth, 
-             contentHeight);
+        rectMode(CENTER);
+        let textWidth = centerNode.currentR * 0.7;
+        let textHeight = centerNode.currentR * 0.6;
+        // שימוש בערך הסליידר ישירות
+        text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + centerTextPadding, textWidth, textHeight);
         pop();
       }
 
@@ -459,22 +465,13 @@ function draw() {
         push();
         fill(0, node.contentAlpha);
         noStroke();
+        textSize(16);
         textAlign(CENTER, CENTER);
-        
-        // חישוב גודל פונט דינמי
-        let fontSize = calculateDynamicFontSize(node.content, node.currentR * 0.7, node.currentR * 0.6);
-        textSize(fontSize);
-        
-        // הצגת התוכן עם פדינג
-        let contentY = node.displayY + titleOffset + fontSize + titleContentPadding;
-        let contentWidth = node.currentR * 0.8 - paragraphPadding * 2;
-        let contentHeight = node.currentR * 0.6 - paragraphPadding * 2;
-        
-        text(node.content, 
-             node.displayX, 
-             contentY, 
-             contentWidth, 
-             contentHeight);
+        rectMode(CENTER);
+        let textWidth = node.currentR * 0.7;
+        let textHeight = node.currentR * 0.6;
+        let adjustedPadding = textContentPadding * (node.currentR / 400);
+        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + adjustedPadding, textWidth, textHeight);
         pop();
       }
     }
@@ -493,10 +490,10 @@ function mousePressed() {
     let cumulativeDelay = 0;
 
     if (status1CenterDelay === 0) {
-      centerNode.targetR = status === 1 ? centerNode.expandedR : centerDefaultSize;
+      centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
     } else {
       setTimeout(() => {
-        centerNode.targetR = status === 1 ? centerNode.expandedR : centerDefaultSize;
+        centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
       }, status1CenterDelay);
     }
 
@@ -541,6 +538,7 @@ function mousePressed() {
           focusSwitchTimer = null;
           transitionStartTime = millis();
 
+          // הגדרת הגודל הדינמי של העיגול הממוקד
           surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
           console.log(`Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
 
@@ -548,6 +546,7 @@ function mousePressed() {
         }, 500);
 
         if (previousFocusedIndex === null || previousFocusedIndex === i) {
+          // הגדרת הגודל הדינמי של העיגול הממוקד
           surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
           console.log(`Initial setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
         }
