@@ -12,7 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
-let textContentPadding = 20;              // מרווח בין כותרת העיגול לתוכן הטקסט
+let textContentPadding = 150;              // מרווח בין כותרת העיגול לתוכן הטקסט
 let textFadeInDelay = 300;                 // דיליי במילישניות לפני תחילת הפייד אין של הטקסט
 let textFadeInSpeed = 0.5;                 // מהירות הפייד אין של הטקסט (ערך גבוה = מהיר יותר)
 let textLengthToSizeRatio = 0.8;           // יחס בין אורך הטקסט לגודל העיגול
@@ -104,6 +104,9 @@ function initNodes() {
     contentAlpha: 0
   };
   
+  // חישוב הגודל הדינמי של העיגול המרכזי בהתאם לטקסט
+  centerNode.expandedR = calculateCircleSizeForText(centerNode.content.length);
+  
   let maxTries = 1000;
   while (surroundingNodes.length < 10 && maxTries > 0) {
     maxTries--;
@@ -162,7 +165,7 @@ function draw() {
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
   
-  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
+  let centerTargetR = status === 1 ? centerNode.expandedR : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
@@ -312,7 +315,7 @@ function draw() {
           let alphaProgress = constrain(fadeElapsed / 500, 0, 1); // 500ms למעבר מלא
           node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
         } else {
-          // שומר על שקיפות מלאה עד שהעיגול מגיע ל-80% מגודלו הסופי
+          // שומר על שקיפות מלאה עד שהעיגול מגיע לזמן הדיליי
           node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
         }
       } else {
@@ -450,14 +453,26 @@ function mousePressed() {
     status = (status === 2) ? 1 : (status === 1 ? 0 : 1);
     transitionStartTime = millis();
     
+    // כאשר לוחצים על העיגול המרכזי ועוברים למצב 1, הגודל החדש צריך להיות הגודל המחושב לפי הטקסט
+    if (status === 1) {
+      centerNode.targetR = centerNode.expandedR;
+    } else {
+      centerNode.targetR = centerDefaultSize;
+    }
+    
     let indices = [...Array(surroundingNodes.length).keys()];
     shuffle(indices, true);
     let cumulativeDelay = 0;
+    
     if (status1CenterDelay === 0) {
-      centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
+      // לא משנים - נשאר כפי שכבר נקבע למעלה
     } else {
       setTimeout(() => {
-        centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
+        if (status === 1) {
+          centerNode.targetR = centerNode.expandedR;
+        } else {
+          centerNode.targetR = centerDefaultSize;
+        }
       }, status1CenterDelay);
     }
     
@@ -497,94 +512,15 @@ function mousePressed() {
           focusSwitchTimer = null;
         }
         focusSwitchTimer = setTimeout(() => {
-          focusedNodeIndex = pendingFocusedIndex;
-          pendingFocusedIndex = null;
-          focusSwitchTimer = null;
-          transitionStartTime = millis();
-          surroundingNodes[i].targetR = status2ExpandedSize;
-          isFocusSwitching = false;
-        }, 500);
-        if (focusedNodeIndex === null || focusedNodeIndex === i) {
-          surroundingNodes[i].targetR = status2ExpandedSize;
-        }
-      }
-      
-      for (let j = 0; j < surroundingNodes.length; j++) {
-        if (j !== i) {
-          let angle = surroundingNodes[j].angle;
-          let distance = baseDistance + random(30, 120);
-          let delay = j * random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
-          setTimeout(() => {
-            surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
-            surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
-            surroundingNodes[j].targetR = surroundingNodes[j].baseR;
-          }, delay);
-        }
-      }
-      
-      centerNode.targetX = width / 2 + status2CenterOffset;
-      centerNode.targetY = height / 2;
-      centerNode.targetR = (centerDefaultSize * growthMultiplier) * status2CenterShrinkFactor;
-      return;
-    }
-  }
-  
-  if (status === 2) {
-    status = 1;
-    if (focusedNodeIndex !== null) {
-      surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
-    }
-    transitionStartTime = millis();
-    resetPositions();
-  } else if (status === 1) {
-    status = 0;
-    transitionStartTime = millis();
-    resetPositions();
-  }
-}
-
-function resetPositions() {
-  centerNode.targetX = width / 2;
-  centerNode.targetY = height / 2;
-  centerNode.targetR = centerDefaultSize;
-  for (let node of surroundingNodes) {
-    node.targetX = node.baseX;
-    node.targetY = node.baseY;
-    node.targetR = node.baseR;
-  }
-}
-
-function handleHover() {
-  for (let i = 0; i < surroundingNodes.length; i++) {
-    let node = surroundingNodes[i];
-    let isHovering = dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2;
-    let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
-    if (node.hoverTargetR !== newTargetR) {
-      hoverStartTimes[i] = millis();
-    }
-    node.hoverTargetR = newTargetR;
-  }
-}
-
-// הוספת פונקציה לחישוב גודל עיגול מתאים לאורך טקסט
-function calculateCircleSizeForText(textLength) {
-  // חישוב בסיסי - מחזיר גודל בין המינימום למקסימום בהתאם לאורך הטקסט
-  // טקסט קצר (50 תווים) = גודל מינימלי
-  // טקסט ארוך (300 תווים) = גודל מקסימלי
-  const minTextLength = 50;
-  const maxTextLength = 300;
-  const normalizedLength = constrain(textLength, minTextLength, maxTextLength);
-  
-  // חישוב ליניארי של הגודל
-  const sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
-  const textLengthRange = maxTextLength - minTextLength;
-  const textLengthRatio = (normalizedLength - minTextLength) / textLengthRange;
-  
-  return status2MinExpandedSize + (sizeRange * textLengthRatio);
-}
-
-function ultraEaseInOut(t) {
-  return t < 0.5 
-    ? pow(t * 2, easeInPower) / 2 
-    : 1 - pow((1 - t) * 2, easeOutPower) / 2;
-}
+            focusedNodeIndex = pendingFocusedIndex;
+            pendingFocusedIndex = null;
+            focusSwitchTimer = null;
+            transitionStartTime = millis();
+            // שימוש בגודל האישי של העיגול במקום הקבוע
+            let focusedCircleSize = surroundingNodes[i].expandedR;
+            surroundingNodes[i].targetR = focusedCircleSize;
+            isFocusSwitching = false;
+          }, 500);
+          if (focusedNodeIndex === null || focusedNodeIndex === i) {
+            // שימוש בגודל האישי של העיגול במקום הקבוע
+            let focusedCircleSize
