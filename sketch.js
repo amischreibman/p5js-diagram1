@@ -14,7 +14,6 @@ let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
 let textContentPadding = 30;
 let textFadeInDelay = 200;
-let textFadeInSpeed = 0.5;
 
 // === סטטוס 0 (דיפולטיבי) ===
 let centerDefaultSize = 180;
@@ -40,6 +39,7 @@ let surroundingNodes = [];
 let status = 0;
 let focusedNodeIndex = null;
 let transitionStartTime = 0;
+let escapePositions = [];
 let hoverStartTimes = [];
 let winkyFont;
 let focusSwitchTimer = null;
@@ -179,6 +179,7 @@ function updateCircleSizesBasedOnContent() {
 
 function draw() {
   let expandedSize = centerDefaultSize * growthMultiplier;
+  let centerTextSize = min(centerNode.currentR * 0.25, 36);
 
   background('#F2A900');
   drawingContext.imageSmoothingEnabled = true;
@@ -271,7 +272,6 @@ function draw() {
     noStroke();
     drawingContext.imageSmoothingEnabled = true;
     drawingContext.imageSmoothingQuality = 'high';
-    let centerTextSize = min(centerNode.currentR * 0.25, 36);
     textSize(centerTextSize);
     drawingContext.shadowColor = textShadowColor;
     drawingContext.shadowBlur = textShadowBlur * 1.5;
@@ -364,7 +364,6 @@ function draw() {
     noStroke();
     drawingContext.imageSmoothingEnabled = true;
     drawingContext.imageSmoothingQuality = 'high';
-    let centerTextSize = min(centerNode.currentR * 0.25, 36);
     textSize(centerTextSize);
     drawingContext.shadowColor = textShadowColor;
     drawingContext.shadowBlur = textShadowBlur * 1.5;
