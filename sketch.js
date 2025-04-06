@@ -13,7 +13,7 @@ let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
 let textContentPadding = 50;
-let centerNodeTextPadding = 140; // רווח ייעודי לעיגול המרכזי בסטטוס 1
+let centerNodeTextPadding = 10; // רווח ייעודי לעיגול המרכזי בסטטוס 1
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
