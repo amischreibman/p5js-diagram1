@@ -117,7 +117,7 @@ function initNodes() {
     
     hoverStartTimes.push(0);
     // הוספת תוכן ייחודי לכל עיגול
-    let nodeContent = `תוכן טקסט ייחודי לעיגול מספר ${surroundingNodes.length + 1}. זהו טקסט שיוצג כאשר העיגול יהיה במצב מיקוד.`;
+    let nodeContent = `text text text text ${surroundingNodes.length + 1}. זהו טקסט שיוצג כאשר העיגול יהיה במצב מיקוד.`;
     
     surroundingNodes.push({
       angle: angle,
