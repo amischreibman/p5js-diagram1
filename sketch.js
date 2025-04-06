@@ -12,7 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
-let textContentPadding = 30;               // מרווח בין כותרת העיגול לתוכן הטקסט
+let textContentPadding = 100;               // מרווח בין כותרת העיגול לתוכן הטקסט
 
 /* ======================= סטטוס 0 (דיפולטיבי) ======================= */
 let centerDefaultSize = 180;               
@@ -263,11 +263,11 @@ function draw() {
         pop();
       }
       
-      // Fade in טקסט רק אחרי שהעיגול המרכזי הגיע לגודל כמעט סופי
+      // Fade in טקסט רק אחרי שהעיגול המרכזי הגיע לגודל של 60% מהאנימציה
       let centerT = constrain((millis() - transitionStartTime) / centerGrowDuration, 0, 1);
-      if (centerT > 0.8) {
-        let alphaProgress = map(centerT, 0.8, 1, 0, 1);
-        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * 0.3);
+      if (centerT > 0.6) {
+        let alphaProgress = map(centerT, 0.6, 1, 0, 1);
+        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * 0.5);
       } else {
         centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
       }
@@ -291,11 +291,11 @@ function draw() {
         let easeHover = ultraEaseInOut(tHover);
         node.currentR = lerp(node.currentR, targetR, easeHover);
         
-        // Fade in טקסט רק אחרי שהעיגול הגיע לגודל כמעט סופי (80% מהאנימציה)
-        if (tHover > 0.8) {
-          // מחשב ערך אלפא בהתאם לכמה זמן עבר מ-80% של האנימציה
-          let alphaProgress = map(tHover, 0.8, 1, 0, 1);
-          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * 0.3);
+        // Fade in טקסט רק אחרי שהעיגול הגיע לגודל של 60% מהאנימציה (במקום 80%)
+        if (tHover > 0.6) {
+          // מחשב ערך אלפא בהתאם לכמה זמן עבר מ-60% של האנימציה
+          let alphaProgress = map(tHover, 0.6, 1, 0, 1);
+          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * 0.5); // מהירות fade in מהירה יותר
         } else {
           // שומר על שקיפות מלאה עד שהעיגול מגיע ל-80% מגודלו הסופי
           node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
