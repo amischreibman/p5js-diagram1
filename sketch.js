@@ -116,6 +116,9 @@ function initNodes() {
     if (overlaps) continue;
     
     hoverStartTimes.push(0);
+    // הוספת תוכן ייחודי לכל עיגול
+    let nodeContent = `תוכן טקסט ייחודי לעיגול מספר ${surroundingNodes.length + 1}. זהו טקסט שיוצג כאשר העיגול יהיה במצב מיקוד.`;
+    
     surroundingNodes.push({
       angle: angle,
       r: r,
@@ -131,7 +134,7 @@ function initNodes() {
       baseR: r,
       expandedR: r * 1.4,
       label: `text ${surroundingNodes.length + 1}`,
-      content: defaultContent,
+      content: nodeContent,
       contentAlpha: 0  // מתחילים עם שקיפות 0
     });
   }
@@ -328,9 +331,24 @@ function draw() {
     
     if (status === 2 && focusedNodeIndex !== null) {
       let node = surroundingNodes[focusedNodeIndex];
+      let shadowOffsetX = 3 * cos(radians(325));
+      let shadowOffsetY = 3 * sin(radians(325));
+      
+      // צייר את הצל של העיגול המרכזי
+      fill(0);
+      ellipse(
+        node.displayX + shadowOffsetX,
+        node.displayY + shadowOffsetY,
+        node.currentR
+      );
+      
+      // צייר את העיגול עצמו
       fill(node.col);
       ellipse(node.displayX, node.displayY, node.currentR);
+      
+      // הזזת הכותרת למעלה כאשר התוכן מופיע
       let titleOffset = map(node.contentAlpha, 0, 255, 0, -node.currentR * 0.25);
+      
       push();
       fill(0);
       noStroke();
@@ -345,15 +363,25 @@ function draw() {
       text(node.label, node.displayX, node.displayY + titleOffset);
       pop();
       
-      push();
-      fill(0, node.contentAlpha);
-      noStroke();
-      textSize(16);
-      textAlign(CENTER, CENTER);
-      text(node.content, node.displayX, node.displayY + node.currentR * 0.15, node.currentR * 0.8, node.currentR * 0.8);
-      pop();
+      // הוספת התוכן של העיגול - צייר את הטקסט
+      if (node.contentAlpha > 10) { // רק אם התוכן כבר לא שקוף לחלוטין
+        push();
+        fill(0, node.contentAlpha);
+        noStroke();
+        textSize(16);
+        textAlign(CENTER, CENTER);
+        rectMode(CENTER);
+        // הקטנת האזור של טקסט כדי שיהיה מרווח בתוך העיגול
+        let textWidth = node.currentR * 0.8;
+        let textHeight = node.currentR * 0.6;
+        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize, textWidth, textHeight);
+        pop();
+      }
     }
   }
+  
+  // קריאה לפונקציה שבודקת את מצב הריחוף
+  handleHover();
 }
 
 function mousePressed() {
