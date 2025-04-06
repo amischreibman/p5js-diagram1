@@ -12,7 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
-let textContentPadding = 30;               // מרווח בין כותרת העיגול לתוכן הטקסט
+let textContentPadding = 50;               // מרווח בין כותרת העיגול לתוכן הטקסט
 
 /* ======================= סטטוס 0 (דיפולטיבי) ======================= */
 let centerDefaultSize = 180;               
