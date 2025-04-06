@@ -12,7 +12,10 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
-let textContentPadding = 30;               // מרווח בין כותרת העיגול לתוכן הטקסט
+let textContentPadding = 150;              // מרווח בין כותרת העיגול לתוכן הטקסט
+let textFadeInDelay = 300;                 // דיליי במילישניות לפני תחילת הפייד אין של הטקסט
+let textFadeInSpeed = 0.5;                 // מהירות הפייד אין של הטקסט (ערך גבוה = מהיר יותר)
+let textLengthToSizeRatio = 0.8;           // יחס בין אורך הטקסט לגודל העיגול
 
 /* ======================= סטטוס 0 (דיפולטיבי) ======================= */
 let centerDefaultSize = 180;               
@@ -28,8 +31,9 @@ let status2ShrinkDuration = 3500;
 let status2CenterOffset = 100;             
 let status2CenterShrinkFactor = 0.4;       
 let status2GrowDuration = 2500;            
-let status2ExpandedSize = 300;             
-let status2DelayRandomRange = [4, 20];       
+let status2MinExpandedSize = 300;          // גודל מינימלי לעיגול פוקוס
+let status2MaxExpandedSize = 500;          // גודל מקסימלי לעיגול פוקוס
+let status2DelayRandomRange = [4, 20];     
 
 /* ======================= משתנים נוספים למבנה האנימציה ======================= */
 let centerNode;
@@ -95,7 +99,9 @@ function initNodes() {
     targetY: height / 2,
     currentX: width / 2,
     currentY: height / 2,
-    label: 'text 0'
+    label: 'text 0',
+    content: "This is the main central node. It contains important information about the core concept. Click on surrounding nodes to explore related topics.",
+    contentAlpha: 0
   };
   
   let maxTries = 1000;
@@ -117,8 +123,12 @@ function initNodes() {
     if (overlaps) continue;
     
     hoverStartTimes.push(0);
-    // הוספת תוכן ייחודי לכל עיגול באנגלית
+    // הוספת תוכן ייחודי לכל עיגול באנגלית ומחשב את גודל העיגול בהתאם לאורך הטקסט
     let nodeContent = `This is unique content for circle ${surroundingNodes.length + 1}. This text will be displayed when the circle is in focus mode. Here you can add more details about this specific topic or concept.`;
+    
+    // חישוב גודל העיגול הנדרש בהתאם לאורך הטקסט
+    let textLength = nodeContent.length;
+    let dynamicSize = calculateCircleSizeForText(textLength);
     
     surroundingNodes.push({
       angle: angle,
@@ -133,7 +143,7 @@ function initNodes() {
       targetY: y,
       currentR: r,
       baseR: r,
-      expandedR: r * 1.4,
+      expandedR: dynamicSize, // שימוש בגודל הדינמי שחושב לפי אורך הטקסט
       label: `text ${surroundingNodes.length + 1}`,
       content: nodeContent,
       contentAlpha: 0  // מתחילים עם שקיפות 0
@@ -241,7 +251,45 @@ function draw() {
     drawingContext.shadowBlur = textShadowBlur * 1.5;
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
-    text(centerNode.label, centerDisplayX, centerDisplayY);
+    
+    // אם המצב הוא 1 (גדילה) - מציג גם את הטקסט של העיגול המרכזי
+    if (status === 1) {
+      let titleOffset = map(centerNode.contentAlpha, 0, 255, 0, -centerNode.currentR * 0.15);
+      text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
+      
+      // מציג את התוכן של העיגול המרכזי אם יש מספיק שקיפות
+      if (centerNode.contentAlpha > 10) {
+        push();
+        fill(0, centerNode.contentAlpha);
+        noStroke();
+        textSize(16);
+        textAlign(CENTER, CENTER);
+        rectMode(CENTER);
+        // שימוש בגודל העיגול המרכזי לחישוב אזור הטקסט
+        let adjustedCenterSize = centerNode.currentR;
+        let textWidth = adjustedCenterSize * 0.7;
+        let textHeight = adjustedCenterSize * 0.6;
+        // מרווח גדול יותר בין הכותרת לטקסט
+        let adjustedPadding = textContentPadding * (adjustedCenterSize / 400); // מתאים את הפאדינג לגודל העיגול
+        text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + adjustedPadding, textWidth, textHeight);
+        pop();
+      }
+      
+      // Fade in טקסט רק אחרי הדיליי שהוגדר
+      let centerElapsed = millis() - transitionStartTime;
+      if (centerElapsed > textFadeInDelay) {
+        // מחשב ערך אלפא בהתאם לזמן שעבר מאז הדיליי
+        let fadeElapsed = centerElapsed - textFadeInDelay;
+        let alphaProgress = constrain(fadeElapsed / 500, 0, 1); // 500ms למעבר מלא
+        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * textFadeInSpeed);
+      } else {
+        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
+      }
+    } else {
+      // במצבים אחרים, רק מציג את הכותרת ומאפס את שקיפות התוכן
+      text(centerNode.label, centerDisplayX, centerDisplayY);
+      centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
+    }
     pop();
     
   } else if (status === 2) {
@@ -252,12 +300,21 @@ function draw() {
       let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
       
       if (i === focusedNodeIndex) {
-        // עבור העיגול הפוקוס – מגדילים את contentAlpha במהירות גבוהה יותר (fade in)
-        node.contentAlpha = lerp(node.contentAlpha, 255, 0.2);
         let hoverElapsed = millis() - transitionStartTime;
         let tHover = constrain(hoverElapsed / status2GrowDuration, 0, 1);
         let easeHover = ultraEaseInOut(tHover);
         node.currentR = lerp(node.currentR, targetR, easeHover);
+        
+        // Fade in טקסט רק אחרי הדיליי שהוגדר
+        if (hoverElapsed > textFadeInDelay) {
+          // מחשב ערך אלפא בהתאם לזמן שעבר מאז הדיליי
+          let fadeElapsed = hoverElapsed - textFadeInDelay;
+          let alphaProgress = constrain(fadeElapsed / 500, 0, 1); // 500ms למעבר מלא
+          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
+        } else {
+          // שומר על שקיפות מלאה עד שהעיגול מגיע ל-80% מגודלו הסופי
+          node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
+        }
       } else {
         // עבור שאר העיגולים – fade out של התוכן
         node.contentAlpha = lerp(node.contentAlpha, 0, 0.2);
@@ -372,10 +429,13 @@ function draw() {
         textSize(16);
         textAlign(CENTER, CENTER);
         rectMode(CENTER);
-        // הקטנת האזור של טקסט כדי שיהיה מרווח בתוך העיגול
-        let textWidth = node.currentR * 0.8;
-        let textHeight = node.currentR * 0.6;
-        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
+        // שימוש בגודל העיגול הנוכחי לחישוב אזור הטקסט
+        let adjustedCircleSize = node.currentR;
+        let textWidth = adjustedCircleSize * 0.7;
+        let textHeight = adjustedCircleSize * 0.6;
+        // מרווח גדול יותר בין הכותרת לטקסט
+        let adjustedPadding = textContentPadding * (adjustedCircleSize / 400); // מתאים את הפאדינג לגודל העיגול
+        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + adjustedPadding, textWidth, textHeight);
         pop();
       }
     }
@@ -504,6 +564,23 @@ function handleHover() {
     }
     node.hoverTargetR = newTargetR;
   }
+}
+
+// הוספת פונקציה לחישוב גודל עיגול מתאים לאורך טקסט
+function calculateCircleSizeForText(textLength) {
+  // חישוב בסיסי - מחזיר גודל בין המינימום למקסימום בהתאם לאורך הטקסט
+  // טקסט קצר (50 תווים) = גודל מינימלי
+  // טקסט ארוך (300 תווים) = גודל מקסימלי
+  const minTextLength = 50;
+  const maxTextLength = 300;
+  const normalizedLength = constrain(textLength, minTextLength, maxTextLength);
+  
+  // חישוב ליניארי של הגודל
+  const sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
+  const textLengthRange = maxTextLength - minTextLength;
+  const textLengthRatio = (normalizedLength - minTextLength) / textLengthRange;
+  
+  return status2MinExpandedSize + (sizeRange * textLengthRatio);
 }
 
 function ultraEaseInOut(t) {
