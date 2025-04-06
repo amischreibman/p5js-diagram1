@@ -1,8 +1,8 @@
 // הגדרות בסיס
 let hoverAnimationDuration = 300; // מהירות הגדילה/התכווצות בזמן ריחוף (מילישניות)
 let status2ShrinkDuration = 3500;   // משך אנימציית ההתכווצות בסטטוס 2 (מילישניות)
-let status2CenterOffset = 100;      // הזזה של העיגול המרכזי בסטטוס 2
-let status2CenterShrinkFactor = 0.4;// יחס כיווץ של העיגול המרכזי בסטטוס 2
+let status2CenterOffset = 150;      // הזזה של העיגול המרכזי בסטטוס 2
+let status2CenterShrinkFactor = 0.2;// יחס כיווץ של העיגול המרכזי בסטטוס 2
 let status1ExpandedSize = 300;      // גודל העיגול המרכזי במצב סטטוס 1
 let status2GrowDuration = 2500;     // משך הגדילה של העיגול ההיקפי בסטטוס 2
 let status2ExpandedSize = 300;      // גודל העיגול ההיקפי בסטטוס 2
@@ -10,8 +10,8 @@ let easeInPower = 4;                // עוצמת ה-ease in
 let easeOutPower = 10;              // עוצמת ה-ease out
 let status1ExpansionAmount = 100;   // גודל ההתרחקות של העיגולים ההיקפיים במצב סטטוס 1
 let status1CenterDelay = 0;         // דיליי לפני הגדלת העיגול המרכזי
-let status2DelayRandomRange = [4, 20];  // טווח דיליי רנדומלי בין העיגולים בסטטוס 2
-let status1DelayRandomRange = [4, 20];  // טווח דיליי רנדומלי בין העיגולים במעבר לסטטוס 1
+let status2DelayRandomRange = [10, 20];  // טווח דיליי רנדומלי בין העיגולים בסטטוס 2
+let status1DelayRandomRange = [10, 20];  // טווח דיליי רנדומלי בין העיגולים במעבר לסטטוס 1
 let centerGrowDuration = 1800;         // מהירות הגדילה של העיגול המרכזי
 let surroundingMoveDuration = 2500;    // מהירות תנועת העיגולים ההיקפיים
 
