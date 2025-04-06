@@ -12,8 +12,8 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 150;
-let textFadeInDelay = 300;
+let textContentPadding = 30;
+let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
 // === סטטוס 0 (דיפולטיבי) ===
