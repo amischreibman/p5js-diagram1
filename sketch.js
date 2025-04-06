@@ -13,7 +13,7 @@ let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
 let textContentPadding = 30; // רווח רגיל לעיגולים מקיפים
-let centerNodeTextPadding = 60; // רווח ייעודי לעיגול המרכזי בסטטוס 1
+let centerTextPadding = 70;  // רווח בין כותרת לתוכן עבור העיגול המרכזי - שנה מספר זה כדי להגדיל את הרווח
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
@@ -47,7 +47,7 @@ let focusSwitchTimer = null;
 let pendingFocusedIndex = null;
 let isFocusSwitching = false;
 let BlinkyStar;
-let previousFocusedIndex = null; // הוספת משתנה חסר
+let previousFocusedIndex = null;
 
 // === תוכן נוסף לעיגולים ===
 let defaultContent = "This is a paragraph of sample text that will appear when the circle is focused.";
@@ -105,18 +105,7 @@ function initNodes() {
     contentAlpha: 0
   };
 
-  // חישוב גודל העיגול המרכזי בהתאם לכמות הטקסט
-  let centerTextLength = centerNode.content.length;
-  let minTextLength = 50;
-  let maxTextLength = 300;
-  let normalizedLength = constrain(centerTextLength, minTextLength, maxTextLength);
-  let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
-  let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
-  let dynamicSize = status2MinExpandedSize + (sizeRange * sizeRatio);
-  
-  // בחירת הגודל הגדול יותר בין החישוב הדינמי לבין הגודל הסטנדרטי
-  centerNode.expandedR = max(dynamicSize, centerDefaultSize * growthMultiplier);
-  console.log(`Center node: Text length = ${centerTextLength}, Expanded size = ${centerNode.expandedR}`);
+  centerNode.expandedR = centerDefaultSize * growthMultiplier;
 
   let maxTries = 1000;
   while (surroundingNodes.length < 10 && maxTries > 0) {
@@ -173,7 +162,6 @@ function initNodes() {
 }
 
 function updateCircleSizesBasedOnContent() {
-  // עדכון גודל העיגולים המקיפים לפי כמות הטקסט
   for (let i = 0; i < surroundingNodes.length; i++) {
     let node = surroundingNodes[i];
     let textLength = node.content.length;
@@ -189,19 +177,6 @@ function updateCircleSizesBasedOnContent() {
 
     console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
-  
-  // עדכון גודל העיגול המרכזי לפי כמות הטקסט
-  let centerTextLength = centerNode.content.length;
-  let minTextLength = 50;
-  let maxTextLength = 300;
-  let normalizedLength = constrain(centerTextLength, minTextLength, maxTextLength);
-  let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
-  let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
-  let dynamicSize = status2MinExpandedSize + (sizeRange * sizeRatio);
-  
-  // בחירת הגודל הגדול יותר בין החישוב הדינמי לבין הגודל הסטנדרטי
-  centerNode.expandedR = max(dynamicSize, centerDefaultSize * growthMultiplier);
-  console.log(`Center node: Text length = ${centerTextLength}, Expanded size = ${centerNode.expandedR}`);
 }
 
 function draw() {
@@ -215,8 +190,7 @@ function draw() {
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
 
-  // שימוש בגודל הדינמי המחושב לפי כמות הטקסט עבור סטטוס 1
-  let centerTargetR = status === 1 ? centerNode.expandedR : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
+  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
@@ -319,9 +293,8 @@ function draw() {
         rectMode(CENTER);
         let textWidth = centerNode.currentR * 0.7;
         let textHeight = centerNode.currentR * 0.6;
-        // שימוש במשתנה הייעודי centerNodeTextPadding במקום textContentPadding
-        let adjustedPadding = centerNodeTextPadding * (centerNode.currentR / 400);
-        text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + adjustedPadding, textWidth, textHeight);
+        // שימוש במשתנה ה-centerTextPadding במקום textContentPadding
+        text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + centerTextPadding, textWidth, textHeight);
         pop();
       }
 
@@ -470,7 +443,6 @@ function draw() {
         rectMode(CENTER);
         let textWidth = node.currentR * 0.7;
         let textHeight = node.currentR * 0.6;
-        // ממשיכים להשתמש ב-textContentPadding הרגיל לעיגולים מקיפים
         let adjustedPadding = textContentPadding * (node.currentR / 400);
         text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + adjustedPadding, textWidth, textHeight);
         pop();
