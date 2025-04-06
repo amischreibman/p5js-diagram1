@@ -12,7 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30;
+let textContentPadding = 55;
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
