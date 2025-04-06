@@ -12,7 +12,8 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 55;
+let textContentPadding = 30;
+let centerNodeTextPadding = 40; // רווח ייעודי לעיגול המרכזי בסטטוס 1
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
@@ -291,7 +292,7 @@ function draw() {
         rectMode(CENTER);
         let textWidth = centerNode.currentR * 0.7;
         let textHeight = centerNode.currentR * 0.6;
-        let adjustedPadding = textContentPadding * (centerNode.currentR / 400);
+        let adjustedPadding = centerNodeTextPadding * (centerNode.currentR / 400);
         text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + adjustedPadding, textWidth, textHeight);
         pop();
       }
