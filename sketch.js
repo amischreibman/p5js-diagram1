@@ -1,4 +1,4 @@
-// הגדרות בסיסיות ואנימציה
+// הגדרות בסיסיות לאנימציות
 let hoverAnimationDuration = 300; // מהירות ריחוף (מילישניות)
 let status2ShrinkDuration = 3500;   // משך התכווצות בסטטוס 2 (מילישניות)
 let status2CenterOffset = 100;      // הזזה אופקית לעיגול במצב סטטוס 2
@@ -23,9 +23,15 @@ let textShadowBlur = 0;          // עוצמת טשטוש הצל
 let textShadowColor = 'white';   // צבע הצל
 let textMaxSizePercentage = 0.6;   // אחוז מקסימלי של גודל הטקסט ביחס לעיגול
 
-// משתנה לשליטה בגודל העיגול במצב סטטוס 1 – ניתן לשנות באמצעות מחוון
-let status1ExpandedSize = 300;   // ערך ברירת מחדל
-let status1SizeSlider;           // המחוון
+// משתנים חדשים לשליטה בגודל העיגול המרכזי:
+// - centerDefaultSize: הגודל הדיפולטיבי במצב סטטוס 0 (וגם אחרי החזרה)
+// - growthMultiplier: מכפיל לגודל שבו העיגול יגדל במצב סטטוס 1
+let centerDefaultSize = 180;  
+let growthMultiplier = 1.5;   // לדוגמה: 1.5 מגדיל ב-50%
+
+// מחוונים לשליטה בזמן אמת
+let centerSizeSlider;
+let multiplierSlider;
 
 // משתנים עבור מבנה האנימציה
 let centerNode;
@@ -53,9 +59,12 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
 
-  // יצירת מחוון לשליטה בגודל העיגול המרכזי במצב סטטוס 1
-  status1SizeSlider = createSlider(100, 600, status1ExpandedSize, 10);
-  status1SizeSlider.position(20, 20);
+  // מחוון לשליטה בגודל הדיפולטיבי של העיגול המרכזי (סטטוס 0)
+  centerSizeSlider = createSlider(100, 300, centerDefaultSize, 1);
+  centerSizeSlider.position(20, 20);
+  // מחוון לשליטה במכפיל הגדילה (סטטוס 1)
+  multiplierSlider = createSlider(0.5, 3, growthMultiplier, 0.01);
+  multiplierSlider.position(20, 50);
   
   initNodes();
   
@@ -82,11 +91,12 @@ function initNodes() {
   focusedNodeIndex = null;
   status = 0;
 
+  // אתחול העיגול המרכזי – משתמשים בגודל הדיפולטיבי
   centerNode = {
     baseX: width / 2,
     baseY: height / 2,
-    r: 180,
-    currentR: 180,
+    r: centerDefaultSize,
+    currentR: centerDefaultSize,
     col: color(0, 102, 255),
     angleOffset: random(1000),
     targetX: width / 2,
@@ -135,8 +145,11 @@ function initNodes() {
 }
 
 function draw() {
-  // עדכון המחוון – שינוי דינמי של ערך העיגול במצב סטטוס 1
-  status1ExpandedSize = status1SizeSlider.value();
+  // עדכון המחוונים בזמן אמת
+  centerDefaultSize = centerSizeSlider.value();
+  growthMultiplier = multiplierSlider.value();
+  // גודל העיגול במצב סטטוס 1 מחושב כמכפלה של הגודל הדיפולטיבי והמכפיל
+  let expandedSize = centerDefaultSize * growthMultiplier;
   
   background('#F2A900');
   drawingContext.imageSmoothingEnabled = true;
@@ -146,14 +159,16 @@ function draw() {
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
   
-  // חישוב הגודל היעד של העיגול המרכזי:
-  // במצב סטטוס 1 – גדל לגודל מלא, במצב סטטוס 2 – מתכווץ לפי מקדם, ובמצב 0 – גודל ברירת מחדל (180)
-  let centerTargetR = status === 1 ? status1ExpandedSize : (status === 2 ? status1ExpandedSize * status2CenterShrinkFactor : 180);
+  // חישוב גודל העיגול המרכזי:
+  // - במצב סטטוס 1: הוא מגיע לגודל expandedSize
+  // - במצב סטטוס 2: הוא מתכווץ לפי status2CenterShrinkFactor
+  // - במצב 0: הוא חוזר לגודל centerDefaultSize
+  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
   
-  // חישוב מיקומים ויזואליים (כולל אפקט הווייגל) לעיגול המרכזי
+  // חישוב מיקום ויזואלי (כולל אפקט "ווייגל") לעיגול המרכזי
   let centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
   let centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
   
@@ -176,18 +191,17 @@ function draw() {
       let easeHover = ultraEaseInOut(tHover);
       node.currentR = lerp(node.currentR, targetR, easeHover);
       
-      // חשבו גם את המיקום הוויזואלי של כל עיגול היקפי
+      // חישוב מיקום ויזואלי לעיגול ההיקפי
       node.displayX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
       node.displayY = node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
       
-      // ציור קו מחבר מהעיגול ההיקפי לעיגול המרכזי (בעזרת המיקומים הוויזואליים)
+      // ציור קו מחבר בין העיגול ההיקפי לעיגול המרכזי
       line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
     }
     
     // ציור העיגולים ההיקפיים והטקסט בתוכם
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
-      // ציור צל לעיגול
       let shadowOffsetX = 3 * cos(radians(325));
       let shadowOffsetY = 3 * sin(radians(325));
       fill(0);
@@ -196,11 +210,9 @@ function draw() {
         node.displayY + shadowOffsetY,
         node.currentR
       );
-      // ציור העיגול עצמו
       fill(node.col);
       ellipse(node.displayX, node.displayY, node.currentR);
       
-      // ציור טקסט בתוך העיגול
       push();
       fill(0);
       noStroke();
@@ -230,11 +242,10 @@ function draw() {
     );
     pop();
     
-    // ציור העיגול המרכזי
+    // ציור העיגול המרכזי והטקסט בו
     fill(centerNode.col);
     ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
     
-    // ציור טקסט בתוך העיגול המרכזי
     push();
     fill(0);
     noStroke();
@@ -250,7 +261,7 @@ function draw() {
     pop();
     
   } else if (status === 2) {
-    // עבור מצב סטטוס 2 – עדכון מיקומים והצגת הקווים והעיגולים
+    // עבור סטטוס 2 – עדכון מיקומים והצגת הקווים והעיגולים
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       node.currentX = lerp(node.currentX, node.targetX, easeOuter);
@@ -276,13 +287,11 @@ function draw() {
           node.currentR = lerp(node.currentR, targetR, easeHover);
         }
       }
-      // חשבו את המיקום הוויזואלי לעיגול ההיקפי
       node.displayX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
       node.displayY = node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
       line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
     }
     
-    // ציור צל לעיגול המרכזי
     push();
     noStroke();
     drawingContext.filter = 'none';
@@ -296,11 +305,9 @@ function draw() {
     );
     pop();
     
-    // ציור העיגול המרכזי
     fill(centerNode.col);
     ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
     
-    // ציור הטקסט בעיגול המרכזי
     push();
     fill(0);
     noStroke();
@@ -315,7 +322,6 @@ function draw() {
     text(centerNode.label, centerDisplayX, centerDisplayY);
     pop();
     
-    // ציור העיגולים ההיקפיים
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       let shadowOffsetX = 3 * cos(radians(325));
@@ -344,7 +350,6 @@ function draw() {
       pop();
     }
     
-    // ציור העיגול הממוקד מעל כולם במצב סטטוס 2
     if (status === 2 && focusedNodeIndex !== null) {
       let node = surroundingNodes[focusedNodeIndex];
       fill(node.col);
@@ -375,12 +380,13 @@ function mousePressed() {
     let indices = [...Array(surroundingNodes.length).keys()];
     shuffle(indices, true);
     let cumulativeDelay = 0;
-    
+    // במצב לחיצה על המרכז, אם אין דיליי – העדכון בהתאם למצב:
     if (status1CenterDelay === 0) {
-      centerNode.targetR = status1ExpandedSize;
+      // במצב סטטוס 1: העיגול מגיע לגודל expandedSize
+      centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
     } else {
       setTimeout(() => {
-        centerNode.targetR = status1ExpandedSize;
+        centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
       }, status1CenterDelay);
     }
     
@@ -448,7 +454,7 @@ function mousePressed() {
       
       centerNode.targetX = width / 2 + status2CenterOffset;
       centerNode.targetY = height / 2;
-      centerNode.targetR = status1ExpandedSize * status2CenterShrinkFactor;
+      centerNode.targetR = (centerDefaultSize * growthMultiplier) * status2CenterShrinkFactor;
       return;
     }
   }
@@ -470,7 +476,8 @@ function mousePressed() {
 function resetPositions() {
   centerNode.targetX = width / 2;
   centerNode.targetY = height / 2;
-  centerNode.targetR = status1ExpandedSize;
+  // במצב סטטוס 0 העיגול חוזר לגודל הדיפולטיבי
+  centerNode.targetR = centerDefaultSize;
   for (let node of surroundingNodes) {
     node.targetX = node.baseX;
     node.targetY = node.baseY;
