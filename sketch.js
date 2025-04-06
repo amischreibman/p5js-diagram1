@@ -12,7 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30; // פדינג בין הכותרת לפסקה
+let textContentPadding = 50; // פדינג בין הכותרת לפסקה
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 
