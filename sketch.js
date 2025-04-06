@@ -397,13 +397,8 @@ function mousePressed() {
     shuffle(indices, true);
     let cumulativeDelay = 0;
     
-    if (status1CenterDelay === 0) {
-      centerNode.targetR = status1ExpandedSize;
-    } else {
-      setTimeout(() => {
-        centerNode.targetR = status1ExpandedSize;
-      }, status1CenterDelay);
-    }
+    // הגדלת העיגול המרכזי
+    centerNode.targetR = status1ExpandedSize;
     
     for (let i = 0; i < indices.length; i++) {
       let nodeIndex = indices[i];
@@ -424,6 +419,7 @@ function mousePressed() {
   for (let i = 0; i < surroundingNodes.length; i++) {
     let node = surroundingNodes[i];
     if (dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2) {
+      // אם יש עיגול מוקד קודם ושלא אותו שנלחץ כעת – מקטינים אותו ומפעילים fade out
       if (status === 2 && focusedNodeIndex !== null && focusedNodeIndex !== i) {
         let prevNode = surroundingNodes[focusedNodeIndex];
         prevNode.targetR = prevNode.baseR;
@@ -433,6 +429,7 @@ function mousePressed() {
       pendingFocusedIndex = i;
       status = 2;
       transitionStartTime = millis();
+      // הזזת העיגול למרכז והכנה להרחבה
       node.targetX = width / 2;
       node.targetY = height / 2;
       node.targetR = node.baseR;
@@ -448,11 +445,13 @@ function mousePressed() {
           pendingFocusedIndex = null;
           focusSwitchTimer = null;
           transitionStartTime = millis();
+          // כאן העיגול מתרחב – targetR מוגדר כערך גבוה (status2ExpandedSize)
           surroundingNodes[i].targetR = status2ExpandedSize;
           surroundingNodes[i].fadingOut = false;
-          surroundingNodes[i].contentFadeStart = millis(); // התחלת fade in
+          surroundingNodes[i].contentFadeStart = millis(); // התחלת fade in לתוכן
           isFocusSwitching = false;
         }, 500);
+        // במידה ואין מוקד קיים או שהוא אותו העיגול, מיד מגדילים אותו
         if (focusedNodeIndex === null || focusedNodeIndex === i) {
           surroundingNodes[i].targetR = status2ExpandedSize;
           surroundingNodes[i].fadingOut = false;
@@ -460,6 +459,7 @@ function mousePressed() {
         }
       }
       
+      // מיקום מחדש של יתר העיגולים
       for (let j = 0; j < surroundingNodes.length; j++) {
         if (j !== i) {
           let angle = surroundingNodes[j].angle;
@@ -473,6 +473,7 @@ function mousePressed() {
         }
       }
       
+      // הזזת העיגול המרכזי בהתאם למוקד החדש
       centerNode.targetX = width / 2 + status2CenterOffset;
       centerNode.targetY = height / 2;
       centerNode.targetR = status1ExpandedSize * status2CenterShrinkFactor;
