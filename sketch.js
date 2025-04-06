@@ -3,14 +3,12 @@ let hoverAnimationDuration = 300; // מהירות הגדילה/התכווצות 
 let status2ShrinkDuration = 3500;   // משך אנימציית ההתכווצות בסטטוס 2 (מילישניות)
 let status2CenterOffset = 100;      // הזזה אופקית לעיגול המרכזי בסטטוס 2
 let status2CenterShrinkFactor = 0.4;// יחס כיווץ העיגול המרכזי בסטטוס 2
-let status1ExpandedSize = 1000;      // גודל העיגול המרכזי במצב סטטוס 1
+let status1ExpandedSize = 300;      // גודל העיגול המרכזי במצב סטטוס 1
 let status2GrowDuration = 2500;     // משך הגדילה של עיגול היקפי בסטטוס 2
-let status2ExpandedSize = 300;      // גודל העיגול ההיקפי בסטטוס 2
+let status2ExpandedSize = 300;      // גודל העיגול ההיקפי במצב מוקד
 let easeInPower = 4;                // עוצמת ה-ease in
 let easeOutPower = 10;              // עוצמת ה-ease out
-let status1ExpansionAmount = 150;   // המרחק שהעיגולים ההיקפיים מתרחקים במצב סטטוס 1
-let status1CenterDelay = 0;         // דיליי לפני הגדלת העיגול המרכזי
-let status2DelayRandomRange = [4, 20];  // טווח דיליי רנדומלי בין העיגולים בסטטוס 2
+let status1ExpansionAmount = 100;   // המרחק שהעיגולים ההיקפיים מתרחקים במצב סטטוס 1
 let status1DelayRandomRange = [4, 20];  // טווח דיליי רנדומלי בין העיגולים במעבר לסטטוס 1
 let centerGrowDuration = 1800;         // מהירות הגדלת העיגול המרכזי
 let surroundingMoveDuration = 2500;    // מהירות תנועת העיגולים ההיקפיים
@@ -29,20 +27,21 @@ let contentFadeDuration = 500;       // משך אנימציית fade in/out (מ�
 
 let centerNode;
 let surroundingNodes = [];
-let status = 0;
-let focusedNodeIndex = null;
+let status = 0;               // 0: מצב רגיל, 1: מעבר, 2: מצב מוקד
+let focusedNodeIndex = null;  // העיגול הממוקד
 let transitionStartTime = 0;
-let hoverStartTimes = [];  // זמנים לריחוף
+let hoverStartTimes = [];     // זמנים לריחוף
 let winkyFont;
-let focusSwitchTimer = null;  // טיימר לדיליי בהחלפת פוקוס
+let BlinkyStar;             // שם הפונט המועדף
+
+// משתנים לעדכון תהליך העברת מוקד
+let focusSwitchTimer = null;
 let pendingFocusedIndex = null;
 let isFocusSwitching = false;
-let BlinkyStar;  // שם הפונט המועדף
 
 function preload() {
-  // ניסיון לטעון את הפונט המועדף
   try {
-    BlinkyStar = loadFont('Blinky Star.otf');  // ודא ששמו נכון
+    BlinkyStar = loadFont('Blinky Star.otf'); // ודא ששמו נכון
   } catch(e) {
     console.log("לא ניתן לטעון את הפונט, משתמש בפונט ברירת המחדל");
   }
@@ -53,7 +52,6 @@ function setup() {
   noStroke();
   initNodes();
   
-  // הגדרת הפונט – פתרון חלופי במקרה של כשל
   if (BlinkyStar) {
     textFont(BlinkyStar);
   } else {
@@ -112,7 +110,7 @@ function initNodes() {
     }
     if (overlaps) continue;
 
-    // כל עיגול יקבל גם תכולת פסקה, עם הגדרות לאנימציית fade
+    // לכל עיגול נוספו גם מאפייני תוכן (פסקה) ואנימציית fade in/out
     let node = {
       angle: angle,
       r: r,
@@ -129,9 +127,9 @@ function initNodes() {
       expandedR: r * 1.4,
       label: `text ${surroundingNodes.length + 1}`,
       content: "זו פסקה של טקסט שתוחלף בהמשך",
-      contentAlpha: 0,      // שקיפות התוכן (0 = מוסתר, 255 = מלא)
+      contentAlpha: 0,      // 0 = מוסתר, 255 = מלא
       fadingOut: false,     // האם התוכן נמצא בתהליך fade out
-      contentFadeStart: 0   // הזמן שבו התחילה האנימציה של התוכן
+      contentFadeStart: 0   // הזמן שבו התחילה האנימציה
     };
     hoverStartTimes.push(0);
     surroundingNodes.push(node);
@@ -147,17 +145,20 @@ function draw() {
   let outerT = constrain((millis() - transitionStartTime) / surroundingMoveDuration, 0, 1);
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
-
-  let centerTargetR = status === 2 ? status1ExpandedSize : status2CenterShrinkFactor * (status === 1 ? status1ExpandedSize : 180);
+  
+  // עדכון הגודל והמיקום של העיגול המרכזי:
+  let centerTargetR = status === 2 
+      ? status1ExpandedSize * status2CenterShrinkFactor 
+      : (status === 1 ? status1ExpandedSize : 180);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
 
   stroke(0);
   strokeWeight(3);
-
+  
+  // מצב 0 ו-1: ציור עיגולים היקפיים, קווים והעיגול המרכזי
   if (status === 0 || status === 1) {
-    // מצבים רגילים – ציור קווים, עיגולים היקפיים והעיגול המרכזי
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       node.currentX = lerp(node.currentX, node.targetX, easeOuter);
@@ -167,14 +168,13 @@ function draw() {
         targetR = node.hoverTargetR;
       }
       let hoverElapsed = millis() - max(transitionStartTime, hoverStartTimes[i]);
-      let hoverDuration = (status === 2 && i === focusedNodeIndex) ? status2GrowDuration : hoverAnimationDuration;
-      let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
+      let tHover = constrain(hoverElapsed / hoverAnimationDuration, 0, 1);
       let easeHover = ultraEaseInOut(tHover);
       node.currentR = lerp(node.currentR, targetR, easeHover);
       line(centerNode.currentX, centerNode.currentY, node.currentX, node.currentY);
     }
-
-    // ציור העיגולים ההיקפיים וטקסטם
+    
+    // ציור העיגולים ההיקפיים וטקסטם (הכותרת במרכז)
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       // ציור הצל לעיגול
@@ -193,12 +193,10 @@ function draw() {
         node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius,
         node.currentR
       );
-      // ציור טקסט (הכותרת) במרכז העיגול
+      // ציור הכותרת במרכז העיגול
       push();
       fill(0);
       noStroke();
-      drawingContext.imageSmoothingEnabled = true;
-      drawingContext.imageSmoothingQuality = 'high';
       let textSizeValue = min(node.currentR * textMaxSizePercentage, 20);
       textSize(textSizeValue);
       drawingContext.shadowColor = textShadowColor;
@@ -212,7 +210,7 @@ function draw() {
       );
       pop();
     }
-
+    
     // ציור העיגול המרכזי
     push();
     noStroke();
@@ -226,7 +224,6 @@ function draw() {
       centerNode.currentR
     );
     pop();
-
     fill(centerNode.col);
     ellipse(
       centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius,
@@ -234,11 +231,10 @@ function draw() {
       centerNode.currentR
     );
     
+    // ציור הטקסט של העיגול המרכזי במרכז
     push();
     fill(0);
     noStroke();
-    drawingContext.imageSmoothingEnabled = true;
-    drawingContext.imageSmoothingQuality = 'high';
     let centerTextSize = min(centerNode.currentR * 0.25, 36);
     textSize(centerTextSize);
     drawingContext.shadowColor = textShadowColor;
@@ -252,8 +248,8 @@ function draw() {
     );
     pop();
     
+  // מצב 2: מצב מוקד – עדכון מיקומם וגודלם של העיגולים, והצגת תוכן עבור העיגול הממוקד
   } else if (status === 2) {
-    // מצב התמקדות – ציור כל העיגולים ועדכון המוקד
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       node.currentX = lerp(node.currentX, node.targetX, easeOuter);
@@ -271,7 +267,7 @@ function draw() {
       }
       line(centerNode.currentX, centerNode.currentY, node.currentX, node.currentY);
       
-      // ציור הצל והעיגול עצמו עבור כל העיגולים
+      // ציור הצל והעיגול עבור כל העיגולים (למעט הממוקד)
       let shadowOffsetX = 3 * cos(radians(325));
       let shadowOffsetY = 3 * sin(radians(325));
       fill(0);
@@ -288,11 +284,10 @@ function draw() {
         node.currentR
       );
       
+      // ציור הכותרת עבור העיגולים שאינם במוקד
       push();
       fill(0);
       noStroke();
-      drawingContext.imageSmoothingEnabled = true;
-      drawingContext.imageSmoothingQuality = 'high';
       let textSizeValue = min(node.currentR * textMaxSizePercentage, 20);
       textSize(textSizeValue);
       drawingContext.shadowColor = textShadowColor;
@@ -306,7 +301,7 @@ function draw() {
       );
       pop();
       
-      // עבור עיגולים שאיבדו מוקד והיו בעבר ממוקדים – ניתן לעדכן אנימציית fade out
+      // אם לעיגול שהיו בעבר במוקד הופעל fade out לתוכן:
       if (i !== focusedNodeIndex && node.fadingOut) {
         let fadeOutAlpha = constrain(255 - ((millis() - node.contentFadeStart) / contentFadeDuration) * 255, 0, 255);
         node.contentAlpha = fadeOutAlpha;
@@ -317,10 +312,10 @@ function draw() {
       }
     }
     
-    // ציור העיגול הממוקד מעל כולם עם תצוגת התוכן
+    // ציור העיגול הממוקד עם הצגת התוכן (פסקה) בתהליך fade in
     if (focusedNodeIndex !== null) {
       let node = surroundingNodes[focusedNodeIndex];
-      // ציור העיגול עצמו
+      // ציור העיגול עצמו (כולל תנועת wiggle)
       fill(node.col);
       ellipse(
         node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius,
@@ -328,7 +323,7 @@ function draw() {
         node.currentR
       );
       
-      // ציור הכותרת – כשהעיגול במוקד, הכותרת עולה מעט למעלה
+      // ציור הכותרת עבור העיגול הממוקד – הטקסט נע יחד עם ה-wiggle ומוזז כלפי מעלה
       push();
       fill(0);
       noStroke();
@@ -338,11 +333,12 @@ function draw() {
       drawingContext.shadowBlur = textShadowBlur * 2;
       drawingContext.shadowOffsetX = 0;
       drawingContext.shadowOffsetY = 0;
-      let titleY = node.currentY - node.currentR * 0.15;
-      text(node.label, node.currentX, titleY);
+      let titleX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
+      let titleY = (node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius) - node.currentR * 0.15;
+      text(node.label, titleX, titleY);
       pop();
       
-      // עדכון אנימציית fade in/out עבור תוכן העיגול
+      // עדכון ערך ה־alpha לתוכן (fade in / fade out)
       let contentAlpha;
       if (node.fadingOut) {
          contentAlpha = constrain(255 - ((millis() - node.contentFadeStart) / contentFadeDuration) * 255, 0, 255);
@@ -355,7 +351,7 @@ function draw() {
          node.fadingOut = false;
       }
       
-      // ציור הפסקה בתוך העיגול – תוך שימוש במסכה (clip) כך שהתוכן יוצג רק בתוך גבולות העיגול
+      // ציור הפסקה בתוך העיגול – שימוש במסכה (clip) כדי להגביל את הטקסט לתוך גבולות העיגול
       if (node.contentAlpha > 0) {
         push();
         drawingContext.save();
@@ -397,7 +393,7 @@ function mousePressed() {
     shuffle(indices, true);
     let cumulativeDelay = 0;
     
-    // הגדלת העיגול המרכזי
+    // הגדלת העיגול המרכזי במצב 1
     centerNode.targetR = status1ExpandedSize;
     
     for (let i = 0; i < indices.length; i++) {
@@ -419,61 +415,36 @@ function mousePressed() {
   for (let i = 0; i < surroundingNodes.length; i++) {
     let node = surroundingNodes[i];
     if (dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2) {
-      // אם יש עיגול מוקד קודם ושלא אותו שנלחץ כעת – מקטינים אותו ומפעילים fade out
+      // אם יש מוקד קודם ושלא אותו, מבצעים fade out לעיגול הקודם
       if (status === 2 && focusedNodeIndex !== null && focusedNodeIndex !== i) {
         let prevNode = surroundingNodes[focusedNodeIndex];
         prevNode.targetR = prevNode.baseR;
         prevNode.fadingOut = true;
         prevNode.contentFadeStart = millis();
       }
-      pendingFocusedIndex = i;
+      // מעבירים את המוקד לעיגול שנלחץ
+      focusedNodeIndex = i;
       status = 2;
       transitionStartTime = millis();
-      // הזזת העיגול למרכז והכנה להרחבה
+      // מעבירים את העיגול למרכז ומגדילים אותו מיד
       node.targetX = width / 2;
       node.targetY = height / 2;
-      node.targetR = node.baseR;
+      node.targetR = status2ExpandedSize;
+      node.fadingOut = false;
+      node.contentFadeStart = millis();
       
-      if (!isFocusSwitching) {
-        isFocusSwitching = true;
-        if (focusSwitchTimer !== null) {
-          clearTimeout(focusSwitchTimer);
-          focusSwitchTimer = null;
-        }
-        focusSwitchTimer = setTimeout(() => {
-          focusedNodeIndex = pendingFocusedIndex;
-          pendingFocusedIndex = null;
-          focusSwitchTimer = null;
-          transitionStartTime = millis();
-          // כאן העיגול מתרחב – targetR מוגדר כערך גבוה (status2ExpandedSize)
-          surroundingNodes[i].targetR = status2ExpandedSize;
-          surroundingNodes[i].fadingOut = false;
-          surroundingNodes[i].contentFadeStart = millis(); // התחלת fade in לתוכן
-          isFocusSwitching = false;
-        }, 500);
-        // במידה ואין מוקד קיים או שהוא אותו העיגול, מיד מגדילים אותו
-        if (focusedNodeIndex === null || focusedNodeIndex === i) {
-          surroundingNodes[i].targetR = status2ExpandedSize;
-          surroundingNodes[i].fadingOut = false;
-          surroundingNodes[i].contentFadeStart = millis();
-        }
-      }
-      
-      // מיקום מחדש של יתר העיגולים
+      // עדכון מיקום יתר העיגולים
       for (let j = 0; j < surroundingNodes.length; j++) {
         if (j !== i) {
           let angle = surroundingNodes[j].angle;
           let distance = baseDistance + random(30, 120);
-          let delay = j * random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
-          setTimeout(() => {
-            surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
-            surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
-            surroundingNodes[j].targetR = surroundingNodes[j].baseR;
-          }, delay);
+          surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
+          surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
+          surroundingNodes[j].targetR = surroundingNodes[j].baseR;
         }
       }
       
-      // הזזת העיגול המרכזי בהתאם למוקד החדש
+      // עדכון מיקום וגודל העיגול המרכזי במצב מוקד
       centerNode.targetX = width / 2 + status2CenterOffset;
       centerNode.targetY = height / 2;
       centerNode.targetR = status1ExpandedSize * status2CenterShrinkFactor;
@@ -507,18 +478,6 @@ function resetPositions() {
     node.targetX = node.baseX;
     node.targetY = node.baseY;
     node.targetR = node.baseR;
-  }
-}
-
-function handleHover() {
-  for (let i = 0; i < surroundingNodes.length; i++) {
-    let node = surroundingNodes[i];
-    let isHovering = dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2;
-    let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
-    if (node.hoverTargetR !== newTargetR) {
-      hoverStartTimes[i] = millis();
-    }
-    node.hoverTargetR = newTargetR;
   }
 }
 
