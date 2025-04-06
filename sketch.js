@@ -1,10 +1,14 @@
+
 /* ======================= הגדרות כלליות ======================= */
-let hoverAnimationDuration = 300;        // מהירות ריחוף (מילישניות)
-let centerGrowDuration = 1800;             // מהירות הגדילה של העיגול המרכזי
-let surroundingMoveDuration = 2500;        // מהירות תנועת העיגולים ההיקפיים
-let baseDistance = 150;                    // מרחק בסיסי מהמרכז
-let wiggleSpeed = 0.01;                    // מהירות "ווייגל"
-let wiggleRadius = 20;                     // גודל "ווייגל"
+let hoverAnimationDuration = 300;        
+let centerGrowDuration = 1800;             
+let surroundingMoveDuration = 2500;        
+let baseDistance = 150;                    
+let wiggleSpeed = 0.01;                    
+let wiggleRadius = 20;                     
+let easeInPower = 4;
+let easeOutPower = 10;
+
 
 /* ======================= הגדרות טקסט ======================= */
 let textShadowBlur = 0;                    // עוצמת טשטוש הצל
