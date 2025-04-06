@@ -291,7 +291,7 @@ function draw() {
         rectMode(CENTER);
         let textWidth = centerNode.currentR * 0.7;
         let textHeight = centerNode.currentR * 0.6;
-        let adjustedPadding = textContentPadding; // שימוש ב-textContentPadding ישירות
+        let adjustedPadding = textContentPadding;
         text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + adjustedPadding, textWidth, textHeight);
         pop();
       }
@@ -441,7 +441,7 @@ function draw() {
         rectMode(CENTER);
         let textWidth = node.currentR * 0.7;
         let textHeight = node.currentR * 0.6;
-        let adjustedPadding = textContentPadding; // שימוש ב-textContentPadding ישירות
+        let adjustedPadding = textContentPadding;
         text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + adjustedPadding, textWidth, textHeight);
         pop();
       }
