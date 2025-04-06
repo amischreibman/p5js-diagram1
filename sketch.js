@@ -20,8 +20,8 @@ let textFadeInSpeed = 0.5;
 let centerDefaultSize = 180;
 
 // === סטטוס 1 (גדילה) ===
-let growthMultiplier = 1.5;
-let status1ExpansionAmount = 100;
+let growthMultiplier = 1.8;
+let status1ExpansionAmount = 200;
 let status1CenterDelay = 0;
 let status1DelayRandomRange = [4, 20];
 
