@@ -174,7 +174,7 @@ function draw() {
       line(centerNode.currentX, centerNode.currentY, node.currentX, node.currentY);
     }
     
-    // ציור העיגולים ההיקפיים וטקסטם (הכותרת במרכז)
+    // ציור העיגולים ההיקפיים וטקסטם (הכותרת במרכז העיגול)
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
       // ציור הצל לעיגול
@@ -254,8 +254,9 @@ function draw() {
       let node = surroundingNodes[i];
       node.currentX = lerp(node.currentX, node.targetX, easeOuter);
       node.currentY = lerp(node.currentY, node.targetY, easeOuter);
-      let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
       
+      // עבור כל העיגולים, עדכון גודל – גם אם הם במוקד
+      let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
       if (i !== focusedNodeIndex) {
         if (node.hoverTargetR !== undefined) {
           targetR = node.hoverTargetR;
@@ -264,10 +265,13 @@ function draw() {
           let easeHover = ultraEaseInOut(tHover);
           node.currentR = lerp(node.currentR, targetR, easeHover);
         }
+      } else {
+        // עדכון לגודל העיגול הממוקד (focused node)
+        node.currentR = lerp(node.currentR, targetR, easeOuter);
       }
       line(centerNode.currentX, centerNode.currentY, node.currentX, node.currentY);
       
-      // ציור הצל והעיגול עבור כל העיגולים (למעט הממוקד)
+      // ציור הצל והעיגול עבור כל העיגולים (למעט הצגה נפרדת של הממוקד)
       let shadowOffsetX = 3 * cos(radians(325));
       let shadowOffsetY = 3 * sin(radians(325));
       fill(0);
@@ -301,7 +305,7 @@ function draw() {
       );
       pop();
       
-      // אם לעיגול שהיו בעבר במוקד הופעל fade out לתוכן:
+      // אם לעיגול שאינו במוקד מופעל fade out לתוכן
       if (i !== focusedNodeIndex && node.fadingOut) {
         let fadeOutAlpha = constrain(255 - ((millis() - node.contentFadeStart) / contentFadeDuration) * 255, 0, 255);
         node.contentAlpha = fadeOutAlpha;
@@ -338,7 +342,7 @@ function draw() {
       text(node.label, titleX, titleY);
       pop();
       
-      // עדכון ערך ה־alpha לתוכן (fade in / fade out)
+      // עדכון אנימציית fade in/out עבור תוכן העיגול
       let contentAlpha;
       if (node.fadingOut) {
          contentAlpha = constrain(255 - ((millis() - node.contentFadeStart) / contentFadeDuration) * 255, 0, 255);
@@ -351,7 +355,7 @@ function draw() {
          node.fadingOut = false;
       }
       
-      // ציור הפסקה בתוך העיגול – שימוש במסכה (clip) כדי להגביל את הטקסט לתוך גבולות העיגול
+      // ציור הפסקה בתוך העיגול – שימוש במסכה (clip) להגבלת הטקסט לגבולות העיגול
       if (node.contentAlpha > 0) {
         push();
         drawingContext.save();
