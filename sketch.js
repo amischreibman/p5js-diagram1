@@ -13,7 +13,7 @@ let textShadowBlur = 0;
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
 let textContentPadding = 150;              // מרווח בין כותרת העיגול לתוכן הטקסט
-let textFadeInDelay = 300;                 // דיליי במילישניות לפני תחילת הפייד אין של הטקסט
+let textFadeInDelay = 100;                 // דיליי במילישניות לפני תחילת הפייד אין של הטקסט
 let textFadeInSpeed = 0.5;                 // מהירות הפייד אין של הטקסט (ערך גבוה = מהיר יותר)
 let textLengthToSizeRatio = 0.8;           // יחס בין אורך הטקסט לגודל העיגול
 
