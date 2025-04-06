@@ -12,6 +12,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
+let textContentPadding = 30;               // מרווח בין כותרת העיגול לתוכן הטקסט
 
 /* ======================= סטטוס 0 (דיפולטיבי) ======================= */
 let centerDefaultSize = 180;               
@@ -44,7 +45,7 @@ let isFocusSwitching = false;
 let BlinkyStar;
 
 /* ======================= תוכן נוסף לעיגולים ======================= */
-let defaultContent = "זו פסקה של טקסט שתוחלף בהמשך";
+let defaultContent = "This is a paragraph of sample text that will appear when the circle is focused.";
 
 /* ======================= פונקציות ======================= */
 function preload() {
@@ -116,8 +117,8 @@ function initNodes() {
     if (overlaps) continue;
     
     hoverStartTimes.push(0);
-    // הוספת תוכן ייחודי לכל עיגול
-    let nodeContent = `text text text text ${surroundingNodes.length + 1}. זהו טקסט שיוצג כאשר העיגול יהיה במצב מיקוד.`;
+    // הוספת תוכן ייחודי לכל עיגול באנגלית
+    let nodeContent = `This is unique content for circle ${surroundingNodes.length + 1}. This text will be displayed when the circle is in focus mode. Here you can add more details about this specific topic or concept.`;
     
     surroundingNodes.push({
       angle: angle,
@@ -374,7 +375,7 @@ function draw() {
         // הקטנת האזור של טקסט כדי שיהיה מרווח בתוך העיגול
         let textWidth = node.currentR * 0.8;
         let textHeight = node.currentR * 0.6;
-        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize, textWidth, textHeight);
+        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
         pop();
       }
     }
