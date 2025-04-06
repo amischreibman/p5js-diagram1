@@ -12,7 +12,9 @@ let easeOutPower = 10;
 let textShadowBlur = 0;                    
 let textShadowColor = 'white';             
 let textMaxSizePercentage = 0.6;           
-let textContentPadding = 100;               // מרווח בין כותרת העיגול לתוכן הטקסט
+let textContentPadding = 30;               // מרווח בין כותרת העיגול לתוכן הטקסט
+let textFadeInDelay = 600;                 // דיליי במילישניות לפני תחילת הפייד אין של הטקסט
+let textFadeInSpeed = 0.5;                 // מהירות הפייד אין של הטקסט (ערך גבוה = מהיר יותר)
 
 /* ======================= סטטוס 0 (דיפולטיבי) ======================= */
 let centerDefaultSize = 180;               
@@ -263,11 +265,13 @@ function draw() {
         pop();
       }
       
-      // Fade in טקסט רק אחרי שהעיגול המרכזי הגיע לגודל של 60% מהאנימציה
-      let centerT = constrain((millis() - transitionStartTime) / centerGrowDuration, 0, 1);
-      if (centerT > 0.6) {
-        let alphaProgress = map(centerT, 0.6, 1, 0, 1);
-        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * 0.5);
+      // Fade in טקסט רק אחרי הדיליי שהוגדר
+      let centerElapsed = millis() - transitionStartTime;
+      if (centerElapsed > textFadeInDelay) {
+        // מחשב ערך אלפא בהתאם לזמן שעבר מאז הדיליי
+        let fadeElapsed = centerElapsed - textFadeInDelay;
+        let alphaProgress = constrain(fadeElapsed / 500, 0, 1); // 500ms למעבר מלא
+        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * textFadeInSpeed);
       } else {
         centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
       }
@@ -291,11 +295,12 @@ function draw() {
         let easeHover = ultraEaseInOut(tHover);
         node.currentR = lerp(node.currentR, targetR, easeHover);
         
-        // Fade in טקסט רק אחרי שהעיגול הגיע לגודל של 60% מהאנימציה (במקום 80%)
-        if (tHover > 0.6) {
-          // מחשב ערך אלפא בהתאם לכמה זמן עבר מ-60% של האנימציה
-          let alphaProgress = map(tHover, 0.6, 1, 0, 1);
-          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * 0.5); // מהירות fade in מהירה יותר
+        // Fade in טקסט רק אחרי הדיליי שהוגדר
+        if (hoverElapsed > textFadeInDelay) {
+          // מחשב ערך אלפא בהתאם לזמן שעבר מאז הדיליי
+          let fadeElapsed = hoverElapsed - textFadeInDelay;
+          let alphaProgress = constrain(fadeElapsed / 500, 0, 1); // 500ms למעבר מלא
+          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
         } else {
           // שומר על שקיפות מלאה עד שהעיגול מגיע ל-80% מגודלו הסופי
           node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
