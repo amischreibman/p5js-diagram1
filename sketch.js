@@ -313,6 +313,11 @@ function draw() {
   } else if (status === 2) {
     // חזרה על הציור במצב סטטוס 2
   }
+function ultraEaseInOut(t) {
+  return t < 0.5 
+    ? pow(t * 2, easeInPower) / 2 
+    : 1 - pow((1 - t) * 2, easeOutPower) / 2;
+}
 
   handleHover();
 }
