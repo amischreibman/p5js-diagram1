@@ -11,7 +11,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30; // רווח אחיד לכל העיגולים
+let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
@@ -47,12 +47,6 @@ let isFocusSwitching = false;
 let BlinkyStar;
 let previousFocusedIndex = null;
 
-// === סליידר לשליטה ברווח ===
-let paddingSlider;
-let paddingLabel;
-let minPadding = 10;
-let maxPadding = 150;
-
 // === תוכן נוסף לעיגולים ===
 let defaultContent = "This is a paragraph of sample text that will appear when the circle is focused.";
 
@@ -80,28 +74,11 @@ function setup() {
   drawingContext.textBaseline = 'middle';
   drawingContext.textAlign = 'center';
   pixelDensity(1);
-  
-  // יצירת סליידר לשליטה ברווח
-  paddingSlider = createSlider(minPadding, maxPadding, textContentPadding);
-  paddingSlider.position(20, 20);
-  paddingSlider.style('width', '200px');
-  
-  // הוספת תווית לסליידר
-  paddingLabel = createDiv('Text Padding: ' + textContentPadding);
-  paddingLabel.position(230, 20);
-  paddingLabel.style('color', 'white');
-  paddingLabel.style('background-color', 'rgba(0, 0, 0, 0.5)');
-  paddingLabel.style('padding', '5px');
-  paddingLabel.style('border-radius', '5px');
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   initNodes();
-  
-  // עדכון מיקום הסליידר והתווית
-  paddingSlider.position(20, 20);
-  paddingLabel.position(230, 20);
 }
 
 function initNodes() {
@@ -198,10 +175,6 @@ function updateCircleSizesBasedOnContent() {
 }
 
 function draw() {
-  // עדכון ערך ה-padding לפי הסליידר
-  textContentPadding = paddingSlider.value();
-  paddingLabel.html('Text Padding: ' + textContentPadding);
-  
   let expandedSize = centerDefaultSize * growthMultiplier;
 
   background('#F2A900');
@@ -333,6 +306,7 @@ function draw() {
   } else {
     // מצב רגיל או מצב 2 עבור העיגול המרכזי
     text(centerNode.label, centerDisplayX, centerDisplayY);
+    // Fade out של הטקסט בעיגול המרכזי כאשר חוזרים ממצב 1 או עוברים למצב 2
     centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, textFadeOutSpeed);
   }
   pop();
@@ -400,6 +374,12 @@ function draw() {
 
 function mousePressed() {
   if (dist(mouseX, mouseY, centerNode.currentX, centerNode.currentY) < centerNode.currentR / 2) {
+    // לחיצה על העיגול המרכזי
+    // קודם נבצע fade out על הטקסט של העיגול הממוקד הנוכחי אם ישנו
+    if (status === 2 && focusedNodeIndex !== null) {
+      surroundingNodes[focusedNodeIndex].contentAlpha = 0;
+    }
+    
     status = (status === 2) ? 1 : (status === 1 ? 0 : 1);
     transitionStartTime = millis();
 
@@ -434,9 +414,17 @@ function mousePressed() {
     let node = surroundingNodes[i];
     if (dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2) {
       if (status === 2 && focusedNodeIndex !== null && focusedNodeIndex !== i) {
+        // אם לוחצים על עיגול חדש, יש לדעוך את הטקסט של העיגול הממוקד הנוכחי
+        surroundingNodes[focusedNodeIndex].contentAlpha = 0;
         surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
         surroundingNodes[focusedNodeIndex].shrinkStartTime = millis();
       }
+      
+      // אם העיגול המרכזי היה במצב 1 (מוגדל) ועכשיו עוברים למצב 2, יש לדעוך את הטקסט שלו
+      if (status === 1) {
+        centerNode.contentAlpha = 0;
+      }
+      
       pendingFocusedIndex = i;
       status = 2;
       transitionStartTime = millis();
@@ -451,7 +439,7 @@ function mousePressed() {
           focusSwitchTimer = null;
         }
         focusSwitchTimer = setTimeout(() => {
-          // כאשר עוברים מעיגול לעיגול, יש לדעוך את הטקסט של העיגול הקודם
+          // כאשר עוברים מעיגול לעיגול, יש לדעוך את הטקסט של העיגול הקודם באופן מיידי
           if (focusedNodeIndex !== null) {
             surroundingNodes[focusedNodeIndex].contentAlpha = 0;
           }
@@ -499,7 +487,7 @@ function mousePressed() {
     status = 1;
     if (focusedNodeIndex !== null) {
       surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
-      // יש לדעוך את הטקסט של העיגול הממוקד כשחוזרים למצב 1
+      // יש לדעוך את הטקסט של העיגול הממוקד כשחוזרים למצב 1 באופן מיידי
       surroundingNodes[focusedNodeIndex].contentAlpha = 0;
       focusedNodeIndex = null;
     }
@@ -507,7 +495,7 @@ function mousePressed() {
     resetPositions();
   } else if (status === 1) {
     status = 0;
-    // יש לדעוך את הטקסט של העיגול המרכזי כשחוזרים למצב 0
+    // יש לדעוך את הטקסט של העיגול המרכזי כשחוזרים למצב 0 באופן מיידי
     centerNode.contentAlpha = 0;
     transitionStartTime = millis();
     resetPositions();
