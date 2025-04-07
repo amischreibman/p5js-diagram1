@@ -11,9 +11,8 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-// הערה: המשתנה textContentPadding לא בשימוש יותר - אנחנו משתמשים בערך קבוע של 60 פיקסלים
-// let textContentPadding = 30;
-let titleOffset = -40;       // מרחק קבוע (בפיקסלים) של הכותרת מהמרכז
+let titleOffset = -70;       // מרחק גדול יותר של הכותרת מהמרכז (הכותרת גבוה יותר)
+let constantTextPadding = 30; // מרחק קבוע בין הכותרת לחלק העליון של הטקסט
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 let textFadeOutSpeed = 0.2;  // מהירות ה-fade out של הטקסט
@@ -164,18 +163,10 @@ function updateCircleSizesBasedOnContent() {
     let node = surroundingNodes[i];
     let textLength = node.content.length;
 
-    let minTextLength = 50;
-    let maxTextLength = 300;
+    // גודל קבוע לכל העיגולים במצב מיקוד - גדול מספיק להכיל את כל הטקסט
+    node.expandedR = 400; 
 
-    let normalizedLength = constrain(textLength, minTextLength, maxTextLength);
-    let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
-    let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
-
-    // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
-    // בנוסף וידוא שכל העיגולים יהיו בגודל זהה
-    node.expandedR = 400; // גודל קבוע לכל העיגולים במצב מיקוד
-
-    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
+    console.log(`Circle ${i+1}: Set expanded size = ${node.expandedR}`);
   }
 }
 
@@ -189,6 +180,14 @@ function draw() {
   let outerT = constrain((millis() - transitionStartTime) / surroundingMoveDuration, 0, 1);
   let easeCenter = ultraEaseInOut(centerT);
   let easeOuter = ultraEaseInOut(outerT);
+
+  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
+  centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
+  centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
+  centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
+
+  let centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
+  let centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
 
   let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
@@ -281,10 +280,9 @@ function draw() {
   drawingContext.shadowBlur = textShadowBlur * 1.5;
   drawingContext.shadowOffsetX = 0;
   drawingContext.shadowOffsetY = 0;
-
+  rectMode(CENTER);
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
-    // קביעת offset קבוע לכותרת בפיקסלים במקום חישוב יחסי לגודל העיגול
     text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
 
     // הצגת תוכן במצב 1
@@ -293,14 +291,17 @@ function draw() {
       fill(0, centerNode.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, CENTER);
-      rectMode(CENTER);
+      
+      // שינוי יישור הטקסט כך שהחלק העליון יהיה קבוע
+      textAlign(CENTER, TOP);
+      
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
       
-      // שימוש במרחק קבוע של 60 פיקסלים בין הכותרת לתוכן, ללא תלות בגודל הטקסט
-      let constantPadding = 60;
-      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + constantPadding, textWidth, textHeight);
+      // חישוב מיקום הטקסט כך שהחלק העליון יהיה במרחק קבוע מהכותרת
+      let textTopY = centerDisplayY + titleOffset + constantTextPadding;
+      
+      text(centerNode.content, centerDisplayX, textTopY, textWidth, textHeight);
       pop();
     }
 
@@ -359,14 +360,17 @@ function draw() {
       fill(0, node.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, CENTER);
-      rectMode(CENTER);
+      
+      // שינוי יישור הטקסט כך שהחלק העליון יהיה קבוע
+      textAlign(CENTER, TOP);
+      
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
       
-      // שימוש במרחק קבוע של 60 פיקסלים בין הכותרת לתוכן, ללא תלות בגודל הטקסט
-      let constantPadding = 60;
-      text(node.content, node.displayX, node.displayY + titleOffset + constantPadding, textWidth, textHeight);
+      // חישוב מיקום הטקסט כך שהחלק העליון יהיה במרחק קבוע מהכותרת
+      let textTopY = node.displayY + titleOffset + constantTextPadding;
+      
+      text(node.content, node.displayX, textTopY, textWidth, textHeight);
       pop();
     }
 
