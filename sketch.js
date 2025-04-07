@@ -11,7 +11,7 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 70; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים
+let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
@@ -168,7 +168,8 @@ function updateCircleSizesBasedOnContent() {
     let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
 
-    node.expandedR = status2MinExpandedSize + (sizeRange * sizeRatio);
+    // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
+    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
 
     console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
@@ -279,7 +280,8 @@ function draw() {
 
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
-    let titleOffset = map(centerNode.contentAlpha, 0, 255, 0, -centerNode.currentR * 0.25);
+    // קביעת offset קבוע לכותרת, ללא תלות באלפא של התוכן
+    let titleOffset = -centerNode.currentR * 0.25;
     text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
 
     // הצגת תוכן במצב 1
@@ -327,8 +329,8 @@ function draw() {
     fill(node.col);
     ellipse(node.displayX, node.displayY, node.currentR);
 
-    // חישוב offset לכותרת כמו בעיגול המרכזי
-    let titleOffset = map(node.contentAlpha, 0, 255, 0, -node.currentR * 0.25);
+    // חישוב offset קבוע לכותרת - לא תלוי באלפא כמו קודם אלא קבוע
+    let titleOffset = -node.currentR * 0.25;
 
     push();
     fill(0);
@@ -342,7 +344,7 @@ function draw() {
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
     
-    // הצג את הכותרת עם offset כמו בעיגול המרכזי
+    // הצג את הכותרת עם offset קבוע
     text(node.label, node.displayX, node.displayY + titleOffset);
     pop();
 
@@ -357,7 +359,7 @@ function draw() {
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
       
-      // שימוש באותו ערך padding כמו בעיגול המרכזי
+      // שימוש באותו ערך padding קבוע לכל העיגולים
       text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
       pop();
     }
