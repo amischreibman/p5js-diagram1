@@ -11,10 +11,11 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים
+let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים (בפיקסלים)
+let titleOffset = -40;       // מרחק קבוע (בפיקסלים) של הכותרת מהמרכז
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
-let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
+let textFadeOutSpeed = 0.2;  // מהירות ה-fade out של הטקסט
 
 // === סטטוס 0 (דיפולטיבי) ===
 let centerDefaultSize = 180;
@@ -170,7 +171,8 @@ function updateCircleSizesBasedOnContent() {
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
 
     // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
-    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
+    // בנוסף וידוא שכל העיגולים יהיו בגודל זהה
+    node.expandedR = 400; // גודל קבוע לכל העיגולים במצב מיקוד
 
     console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
@@ -281,8 +283,7 @@ function draw() {
 
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
-    // קביעת offset קבוע לכותרת, ללא תלות באלפא של התוכן
-    let titleOffset = -centerNode.currentR * 0.25;
+    // קביעת offset קבוע לכותרת בפיקסלים במקום חישוב יחסי לגודל העיגול
     text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
 
     // הצגת תוכן במצב 1
@@ -330,8 +331,7 @@ function draw() {
     fill(node.col);
     ellipse(node.displayX, node.displayY, node.currentR);
 
-    // חישוב offset קבוע לכותרת - לא תלוי באלפא כמו קודם אלא קבוע
-    let titleOffset = -node.currentR * 0.25;
+    // חישוב offset קבוע לכותרת בפיקסלים במקום חישוב יחסי לגודל העיגול
 
     push();
     fill(0);
