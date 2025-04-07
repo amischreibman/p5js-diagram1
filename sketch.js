@@ -338,7 +338,6 @@ function draw() {
       centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
     }
     pop();
-
   } else if (status === 2) {
     for (let i = 0; i < surroundingNodes.length; i++) {
       let node = surroundingNodes[i];
@@ -478,112 +477,6 @@ function draw() {
   }
 
   handleHover();
-}
-
-function mousePressed() {
-  if (dist(mouseX, mouseY, centerNode.currentX, centerNode.currentY) < centerNode.currentR / 2) {
-    status = (status === 2) ? 1 : (status === 1 ? 0 : 1);
-    transitionStartTime = millis();
-
-    let indices = [...Array(surroundingNodes.length).keys()];
-    shuffle(indices, true);
-    let cumulativeDelay = 0;
-
-    if (status1CenterDelay === 0) {
-      centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
-    } else {
-      setTimeout(() => {
-        centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
-      }, status1CenterDelay);
-    }
-
-    for (let i = 0; i < indices.length; i++) {
-      let nodeIndex = indices[i];
-      let node = surroundingNodes[nodeIndex];
-      let angle = node.angle;
-      let distance = baseDistance + status1ExpansionAmount;
-      setTimeout(() => {
-        node.targetX = centerNode.baseX + cos(angle) * distance;
-        node.targetY = centerNode.baseY + sin(angle) * distance;
-        node.targetR = node.baseR;
-      }, cumulativeDelay);
-      cumulativeDelay += random(status1DelayRandomRange[0], status1DelayRandomRange[1]);
-    }
-    return;
-  }
-
-  for (let i = 0; i < surroundingNodes.length; i++) {
-    let node = surroundingNodes[i];
-    if (dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2) {
-      if (status === 2 && focusedNodeIndex !== null && focusedNodeIndex !== i) {
-        surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
-        surroundingNodes[focusedNodeIndex].shrinkStartTime = millis();
-      }
-      pendingFocusedIndex = i;
-      status = 2;
-      transitionStartTime = millis();
-      node.targetX = width / 2;
-      node.targetY = height / 2;
-      node.targetR = node.baseR;
-
-      if (!isFocusSwitching) {
-        isFocusSwitching = true;
-        if (focusSwitchTimer !== null) {
-          clearTimeout(focusSwitchTimer);
-          focusSwitchTimer = null;
-        }
-        focusSwitchTimer = setTimeout(() => {
-          focusedNodeIndex = pendingFocusedIndex;
-          pendingFocusedIndex = null;
-          focusSwitchTimer = null;
-          transitionStartTime = millis();
-
-          // הגדרת הגודל הדינמי של העיגול הממוקד
-          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
-          console.log(`Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
-
-          isFocusSwitching = false;
-        }, 500);
-
-        if (previousFocusedIndex === null || previousFocusedIndex === i) {
-          // הגדרת הגודל הדינמי של העיגול הממוקד
-          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
-          console.log(`Initial setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
-        }
-      }
-
-      for (let j = 0; j < surroundingNodes.length; j++) {
-        if (j !== i) {
-          let angle = surroundingNodes[j].angle;
-          let distance = baseDistance + random(30, 120);
-          let delay = j * random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
-          setTimeout(() => {
-            surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
-            surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
-            surroundingNodes[j].targetR = surroundingNodes[j].baseR;
-          }, delay);
-        }
-      }
-
-      centerNode.targetX = width / 2 + status2CenterOffset;
-      centerNode.targetY = height / 2;
-      centerNode.targetR = (centerDefaultSize * growthMultiplier) * status2CenterShrinkFactor;
-      return;
-    }
-  }
-
-  if (status === 2) {
-    status = 1;
-    if (focusedNodeIndex !== null) {
-      surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
-    }
-    transitionStartTime = millis();
-    resetPositions();
-  } else if (status === 1) {
-    status = 0;
-    transitionStartTime = millis();
-    resetPositions();
-  }
 }
 
 function resetPositions() {
