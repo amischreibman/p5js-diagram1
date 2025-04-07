@@ -1,5 +1,4 @@
 // === הגדרות בסיס ===
-// הוסר: let hoverAnimationDuration = 300;
 let centerGrowDuration = 1800;
 let surroundingMoveDuration = 2500;
 let baseDistance = 150;
@@ -41,7 +40,6 @@ let surroundingNodes = [];
 let status = 0;
 let focusedNodeIndex = null;
 let transitionStartTime = 0;
-// הוסר: let hoverStartTimes = [];
 let winkyFont;
 let focusSwitchTimer = null;
 let pendingFocusedIndex = null;
@@ -107,7 +105,6 @@ function windowResized() {
 }
 
 function initNodes() {
-  // הוסר: hoverStartTimes = [];
   surroundingNodes = [];
   focusedNodeIndex = null;
   status = 0;
@@ -130,7 +127,7 @@ function initNodes() {
 
   centerNode.expandedR = centerDefaultSize * growthMultiplier;
 
-      let maxTries = 1000;
+  let maxTries = 1000;
   while (surroundingNodes.length < 10 && maxTries > 0) {
     maxTries--;
     let angle = random(TWO_PI);
@@ -392,15 +389,13 @@ function draw() {
     }
 
     // Fade in הטקסט בעיגול הממוקד
-    let hoverElapsed = millis() - transitionStartTime;
-    if (hoverElapsed > textFadeInDelay) {
-      let fadeElapsed = hoverElapsed - textFadeInDelay;
+    let focusElapsed = millis() - transitionStartTime;
+    if (focusElapsed > textFadeInDelay) {
+      let fadeElapsed = focusElapsed - textFadeInDelay;
       let alphaProgress = constrain(fadeElapsed / 500, 0, 1);
       node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
     }
   }
-
-  // הוסר: handleHover();
 }
 
 function mousePressed() {
@@ -529,8 +524,6 @@ function resetPositions() {
     node.targetR = node.baseR;
   }
 }
-
-// פונקציית handleHover הוסרה לחלוטין
 
 function ultraEaseInOut(t) {
   return t < 0.5 
