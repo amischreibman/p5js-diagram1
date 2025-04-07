@@ -11,11 +11,10 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let titleOffset = -70;       // מרחק גדול יותר של הכותרת מהמרכז (הכותרת גבוה יותר)
-let constantTextPadding = 30; // מרחק קבוע בין הכותרת לחלק העליון של הטקסט
+let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
-let textFadeOutSpeed = 0.2;  // מהירות ה-fade out של הטקסט
+let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
 
 // === סטטוס 0 (דיפולטיבי) ===
 let centerDefaultSize = 180;
@@ -42,10 +41,9 @@ let status = 0;
 let focusedNodeIndex = null;
 let transitionStartTime = 0;
 let winkyFont;
-// הסרנו את המשתנים הבאים שאינם נחוצים יותר
-// let focusSwitchTimer = null;
-// let pendingFocusedIndex = null;
-// let isFocusSwitching = false;
+let focusSwitchTimer = null;
+let pendingFocusedIndex = null;
+let isFocusSwitching = false;
 let BlinkyStar;
 let previousFocusedIndex = null;
 
@@ -163,10 +161,17 @@ function updateCircleSizesBasedOnContent() {
     let node = surroundingNodes[i];
     let textLength = node.content.length;
 
-    // גודל קבוע לכל העיגולים במצב מיקוד - גדול מספיק להכיל את כל הטקסט
-    node.expandedR = 400; 
+    let minTextLength = 50;
+    let maxTextLength = 300;
 
-    console.log(`Circle ${i+1}: Set expanded size = ${node.expandedR}`);
+    let normalizedLength = constrain(textLength, minTextLength, maxTextLength);
+    let sizeRange = status2MaxExpandedSize - status2MinExpandedSize;
+    let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
+
+    // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
+    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
+
+    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
 }
 
@@ -212,23 +217,6 @@ function draw() {
     line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
   }
 
-  // צייר את העיגול המרכזי תחילה
-  push();
-  noStroke();
-  drawingContext.filter = 'none';
-  let shadowOffsetX = 3 * cos(radians(145));
-  let shadowOffsetY = 3 * sin(radians(145));
-  fill(0);
-  ellipse(
-    centerDisplayX + shadowOffsetX,
-    centerDisplayY + shadowOffsetY,
-    centerNode.currentR
-  );
-  pop();
-
-  fill(centerNode.col);
-  ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
-
   // צייר עיגולים היקפיים (חוץ מהעיגול בפוקוס במצב 2)
   for (let i = 0; i < surroundingNodes.length; i++) {
     if (status === 2 && i === focusedNodeIndex) continue;
@@ -256,11 +244,26 @@ function draw() {
     drawingContext.shadowBlur = textShadowBlur;
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
-    // כאן נשתמש בברירת המחדל של יישור לטקסט (מרכז, מרכז) עבור העיגולים הלא במיקוד
-    textAlign(RIGHT, TOP); // לשנות את היישור לימין בעיגולים ההיקפיים
     text(node.label, node.displayX, node.displayY);
     pop();
   }
+
+  // צייר עיגול מרכזי
+  push();
+  noStroke();
+  drawingContext.filter = 'none';
+  let shadowOffsetX = 3 * cos(radians(145));
+  let shadowOffsetY = 3 * sin(radians(145));
+  fill(0);
+  ellipse(
+    centerDisplayX + shadowOffsetX,
+    centerDisplayY + shadowOffsetY,
+    centerNode.currentR
+  );
+  pop();
+
+  fill(centerNode.col);
+  ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
 
   // טיפול בטקסט בעיגול המרכזי
   push();
@@ -274,14 +277,12 @@ function draw() {
   drawingContext.shadowBlur = textShadowBlur * 1.5;
   drawingContext.shadowOffsetX = 0;
   drawingContext.shadowOffsetY = 0;
-  rectMode(CENTER);
+
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
-    // שינוי יישור הטקסט למרכז
-    push();
-    textAlign(CENTER, TOP);
+    // קביעת offset קבוע לכותרת, ללא תלות באלפא של התוכן
+    let titleOffset = -centerNode.currentR * 0.25;
     text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
-    pop();
 
     // הצגת תוכן במצב 1
     if (centerNode.contentAlpha > 10) {
@@ -289,17 +290,11 @@ function draw() {
       fill(0, centerNode.contentAlpha);
       noStroke();
       textSize(16);
-
-      // שינוי יישור הטקסט כך שהחלק העליון יהיה במרחק קבוע מהכותרת
-      textAlign(CENTER, TOP);
-      
+      textAlign(CENTER, CENTER);
+      rectMode(CENTER);
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
-      
-      // חישוב מיקום הטקסט כך שהחלק העליון יהיה במרחק קבוע מהכותרת
-      let textTopY = centerDisplayY + titleOffset + constantTextPadding;
-      
-      text(centerNode.content, centerDisplayX, textTopY, textWidth, textHeight);
+      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + textContentPadding, textWidth, textHeight);
       pop();
     }
 
@@ -318,7 +313,7 @@ function draw() {
   }
   pop();
 
-  // צייר את העיגול הממוקד במצב 2 אחרון כדי שיהיה מעל כל היתר
+  // צייר את העיגול הממוקד במצב 2
   if (status === 2 && focusedNodeIndex !== null) {
     let node = surroundingNodes[focusedNodeIndex];
     let shadowOffsetX = 3 * cos(radians(325));
@@ -334,7 +329,9 @@ function draw() {
     fill(node.col);
     ellipse(node.displayX, node.displayY, node.currentR);
 
-    // חישוב offset קבוע לכותרת בפיקסלים במקום חישוב יחסי לגודל העיגול
+    // חישוב offset קבוע לכותרת - לא תלוי באלפא כמו קודם אלא קבוע
+    let titleOffset = -node.currentR * 0.25;
+
     push();
     fill(0);
     noStroke();
@@ -347,11 +344,8 @@ function draw() {
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
     
-    // הצגת הכותרת עם יישור תחתון, כך שהסיום של הכותרת יהיה במיקום קבוע
-    push();
-    textAlign(CENTER, BOTTOM);
+    // הצג את הכותרת עם offset קבוע
     text(node.label, node.displayX, node.displayY + titleOffset);
-    pop();
     pop();
 
     // הצג את התוכן של העיגול הממוקד
@@ -360,17 +354,13 @@ function draw() {
       fill(0, node.contentAlpha);
       noStroke();
       textSize(16);
-      
-      // שינוי יישור הטקסט כך שהחלק העליון יהיה קבוע
-      textAlign(CENTER, TOP);
-      
+      textAlign(CENTER, CENTER);
+      rectMode(CENTER);
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
       
-      // חישוב מיקום הטקסט כך שהחלק העליון יהיה במרחק קבוע מהכותרת
-      let textTopY = node.displayY + titleOffset + constantTextPadding;
-      
-      text(node.content, node.displayX, textTopY, textWidth, textHeight);
+      // שימוש באותו ערך padding קבוע לכל העיגולים
+      text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
       pop();
     }
 
@@ -437,29 +427,57 @@ function mousePressed() {
         centerNode.contentAlpha = 0;
       }
       
-      // הגדרת העיגול הממוקד והתחלת האנימציה
-      focusedNodeIndex = i; // קביעת העיגול הממוקד מיד (ללא המתנה)
-      // pendingFocusedIndex = i; // הערה: המשתנה הוסר
+      pendingFocusedIndex = i;
       status = 2;
       transitionStartTime = millis();
-      
-      // מיד קובעים את מיקום העיגול במרכז וגודלו המוגדל
       node.targetX = width / 2;
       node.targetY = height / 2;
-      node.targetR = node.expandedR; // קביעת הגודל המוגדל מיד
-      
-      // מיקום שאר העיגולים
+      node.targetR = node.baseR;
+
+      if (!isFocusSwitching) {
+        isFocusSwitching = true;
+        if (focusSwitchTimer !== null) {
+          clearTimeout(focusSwitchTimer);
+          focusSwitchTimer = null;
+        }
+        focusSwitchTimer = setTimeout(() => {
+          // כאשר עוברים מעיגול לעיגול, יש לדעוך את הטקסט של העיגול הקודם באופן מיידי
+          if (focusedNodeIndex !== null) {
+            surroundingNodes[focusedNodeIndex].contentAlpha = 0;
+          }
+          
+          focusedNodeIndex = pendingFocusedIndex;
+          pendingFocusedIndex = null;
+          focusSwitchTimer = null;
+          transitionStartTime = millis();
+
+          // הגדרת הגודל הדינמי של העיגול הממוקד
+          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
+          console.log(`Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
+
+          isFocusSwitching = false;
+        }, 500);
+
+        if (previousFocusedIndex === null || previousFocusedIndex === i) {
+          // הגדרת הגודל הדינמי של העיגול הממוקד
+          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
+          console.log(`Initial setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
+        }
+      }
+
       for (let j = 0; j < surroundingNodes.length; j++) {
         if (j !== i) {
           let angle = surroundingNodes[j].angle;
           let distance = baseDistance + random(30, 120);
-          surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
-          surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
-          surroundingNodes[j].targetR = surroundingNodes[j].baseR;
+          let delay = j * random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
+          setTimeout(() => {
+            surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
+            surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
+            surroundingNodes[j].targetR = surroundingNodes[j].baseR;
+          }, delay);
         }
       }
 
-      // מיקום העיגול המרכזי
       centerNode.targetX = width / 2 + status2CenterOffset;
       centerNode.targetY = height / 2;
       centerNode.targetR = (centerDefaultSize * growthMultiplier) * status2CenterShrinkFactor;
@@ -468,11 +486,10 @@ function mousePressed() {
   }
 
   if (status === 2) {
-    // חזרה ישירה למצב סטטוס 0 במקום למצב 1
-    status = 0;
+    status = 1;
     if (focusedNodeIndex !== null) {
       surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
-      // יש לדעוך את הטקסט של העיגול הממוקד כשחוזרים למצב 0 באופן מיידי
+      // יש לדעוך את הטקסט של העיגול הממוקד כשחוזרים למצב 1 באופן מיידי
       surroundingNodes[focusedNodeIndex].contentAlpha = 0;
       focusedNodeIndex = null;
     }
