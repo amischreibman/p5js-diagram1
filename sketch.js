@@ -189,13 +189,14 @@ function draw() {
   let centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
   let centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
 
-  let centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
+  // קטע קוד חוזר - שים לב: ניתן לאחד אם יש צורך, אך נשאר לפי המבנה המקורי
+  centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
   centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
   centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
   centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
 
-  let centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
-  let centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
+  centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
+  centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
 
   stroke(0);
   strokeWeight(3);
@@ -264,6 +265,7 @@ function draw() {
     drawingContext.shadowBlur = textShadowBlur;
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
+    // כאן נשתמש בברירת המחדל של יישור לטקסט (מרכז, מרכז) עבור העיגולים הלא במיקוד
     text(node.label, node.displayX, node.displayY);
     pop();
   }
@@ -283,7 +285,11 @@ function draw() {
   rectMode(CENTER);
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
+    // מציגים את הכותרת עם יישור תחתון, כך שהסיום של הכותרת יהיה במיקום קבוע
+    push();
+    textAlign(CENTER, BOTTOM);
     text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
+    pop();
 
     // הצגת תוכן במצב 1
     if (centerNode.contentAlpha > 10) {
@@ -337,7 +343,6 @@ function draw() {
     ellipse(node.displayX, node.displayY, node.currentR);
 
     // חישוב offset קבוע לכותרת בפיקסלים במקום חישוב יחסי לגודל העיגול
-
     push();
     fill(0);
     noStroke();
@@ -350,8 +355,11 @@ function draw() {
     drawingContext.shadowOffsetX = 0;
     drawingContext.shadowOffsetY = 0;
     
-    // הצג את הכותרת עם offset קבוע
+    // הצגת הכותרת עם יישור תחתון, כך שהסיום של הכותרת יהיה במיקום קבוע
+    push();
+    textAlign(CENTER, BOTTOM);
     text(node.label, node.displayX, node.displayY + titleOffset);
+    pop();
     pop();
 
     // הצג את התוכן של העיגול הממוקד
@@ -439,7 +447,7 @@ function mousePressed() {
       
       // הגדרת העיגול הממוקד והתחלת האנימציה
       focusedNodeIndex = i; // קביעת העיגול הממוקד מיד (ללא המתנה)
-      pendingFocusedIndex = i;
+      // pendingFocusedIndex = i; // הערה: המשתנה הוסר
       status = 2;
       transitionStartTime = millis();
       
