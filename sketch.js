@@ -189,12 +189,6 @@ function draw() {
   let centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
   let centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
 
-  // קטע קוד חוזר - שים לב: ניתן לאחד אם יש צורך, אך נשאר לפי המבנה המקורי
-  centerTargetR = status === 1 ? expandedSize : (status === 2 ? expandedSize * status2CenterShrinkFactor : centerDefaultSize);
-  centerNode.currentR = lerp(centerNode.currentR, centerTargetR, easeCenter);
-  centerNode.currentX = lerp(centerNode.currentX, centerNode.targetX, easeCenter);
-  centerNode.currentY = lerp(centerNode.currentY, centerNode.targetY, easeCenter);
-
   centerDisplayX = centerNode.currentX + cos(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
   centerDisplayY = centerNode.currentY + sin(frameCount * wiggleSpeed + centerNode.angleOffset) * wiggleRadius;
 
