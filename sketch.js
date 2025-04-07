@@ -11,7 +11,8 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30; // שליטה במרחק בין הכותרת לטקסט בכל העיגולים (בפיקסלים)
+// הערה: המשתנה textContentPadding לא בשימוש יותר - אנחנו משתמשים בערך קבוע של 60 פיקסלים
+// let textContentPadding = 30;
 let titleOffset = -40;       // מרחק קבוע (בפיקסלים) של הכותרת מהמרכז
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
@@ -296,7 +297,10 @@ function draw() {
       rectMode(CENTER);
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
-      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + textContentPadding, textWidth, textHeight);
+      
+      // שימוש במרחק קבוע של 60 פיקסלים בין הכותרת לתוכן, ללא תלות בגודל הטקסט
+      let constantPadding = 60;
+      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + constantPadding, textWidth, textHeight);
       pop();
     }
 
@@ -360,8 +364,9 @@ function draw() {
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
       
-      // שימוש באותו ערך padding קבוע לכל העיגולים
-      text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
+      // שימוש במרחק קבוע של 60 פיקסלים בין הכותרת לתוכן, ללא תלות בגודל הטקסט
+      let constantPadding = 60;
+      text(node.content, node.displayX, node.displayY + titleOffset + constantPadding, textWidth, textHeight);
       pop();
     }
 
