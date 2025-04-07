@@ -132,6 +132,11 @@ function draw() {
       : lerp(centerNode.contentAlpha, 0, 0.1);
     drawCenterNodeContent(centerNode.currentX, centerNode.currentY, centerTextSize, titleOffset);
   } else {
+    // אנימציית fade out כאשר יוצאים מסטטוס 1
+    centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.05);
+    drawCenterNodeContent(centerNode.currentX, centerNode.currentY, centerTextSize, titleOffset);
+  }
+  } else {
     centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
   }
 
