@@ -130,7 +130,7 @@ function initNodes() {
 
   centerNode.expandedR = centerDefaultSize * growthMultiplier;
 
-  let maxTries = 1000;
+      let maxTries = 1000;
   while (surroundingNodes.length < 10 && maxTries > 0) {
     maxTries--;
     let angle = random(TWO_PI);
@@ -147,8 +147,6 @@ function initNodes() {
       }
     }
     if (overlaps) continue;
-
-    hoverStartTimes.push(0);
 
     let nodeIndex = surroundingNodes.length + 1;
     let nodeContent = `This is unique content for circle ${nodeIndex}. `;
@@ -234,7 +232,6 @@ function draw() {
     node.currentX = lerp(node.currentX, node.targetX, easeOuter);
     node.currentY = lerp(node.currentY, node.targetY, easeOuter);
     let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
-    // הסרת הטיפול באפקט hover
     node.currentR = lerp(node.currentR, targetR, 0.1);
 
     // Fade out הטקסט כאשר איננו במצב פוקוס
@@ -403,7 +400,7 @@ function draw() {
     }
   }
 
-  handleHover();
+  // הוסר: handleHover();
 }
 
 function mousePressed() {
@@ -533,9 +530,7 @@ function resetPositions() {
   }
 }
 
-function handleHover() {
-  // אפקט ה-hover הוסר כדי למנוע בעיות
-}
+// פונקציית handleHover הוסרה לחלוטין
 
 function ultraEaseInOut(t) {
   return t < 0.5 
