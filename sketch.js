@@ -1,5 +1,5 @@
 // === הגדרות בסיס ===
-let hoverAnimationDuration = 300;
+// הוסר: let hoverAnimationDuration = 300;
 let centerGrowDuration = 1800;
 let surroundingMoveDuration = 2500;
 let baseDistance = 150;
@@ -41,7 +41,7 @@ let surroundingNodes = [];
 let status = 0;
 let focusedNodeIndex = null;
 let transitionStartTime = 0;
-let hoverStartTimes = [];
+// הוסר: let hoverStartTimes = [];
 let winkyFont;
 let focusSwitchTimer = null;
 let pendingFocusedIndex = null;
@@ -107,7 +107,7 @@ function windowResized() {
 }
 
 function initNodes() {
-  hoverStartTimes = [];
+  // הוסר: hoverStartTimes = [];
   surroundingNodes = [];
   focusedNodeIndex = null;
   status = 0;
@@ -234,14 +234,8 @@ function draw() {
     node.currentX = lerp(node.currentX, node.targetX, easeOuter);
     node.currentY = lerp(node.currentY, node.targetY, easeOuter);
     let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
-    if (node.hoverTargetR !== undefined && i !== focusedNodeIndex) {
-      targetR = node.hoverTargetR;
-    }
-    let hoverElapsed = millis() - max(transitionStartTime, hoverStartTimes[i]);
-    let hoverDuration = (status === 2 && i === focusedNodeIndex) ? status2GrowDuration : hoverAnimationDuration;
-    let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
-    let easeHover = ultraEaseInOut(tHover);
-    node.currentR = lerp(node.currentR, targetR, easeHover);
+    // הסרת הטיפול באפקט hover
+    node.currentR = lerp(node.currentR, targetR, 0.1);
 
     // Fade out הטקסט כאשר איננו במצב פוקוס
     if ((status !== 2 || i !== focusedNodeIndex) && 
@@ -540,15 +534,7 @@ function resetPositions() {
 }
 
 function handleHover() {
-  for (let i = 0; i < surroundingNodes.length; i++) {
-    let node = surroundingNodes[i];
-    let isHovering = dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2;
-    let newTargetR = isHovering ? node.baseR * 1.2 : node.baseR;
-    if (node.hoverTargetR !== newTargetR) {
-      hoverStartTimes[i] = millis();
-    }
-    node.hoverTargetR = newTargetR;
-  }
+  // אפקט ה-hover הוסר כדי למנוע בעיות
 }
 
 function ultraEaseInOut(t) {
