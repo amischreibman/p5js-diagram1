@@ -12,10 +12,10 @@ let easeOutPower = 10;
 let textShadowBlur = 0;
 let textShadowColor = 'white';
 let textMaxSizePercentage = 0.6;
-let textContentPadding = 30; // רווח רגיל לעיגולים מקיפים
-let centerTextPadding = 70;  // רווח בין כותרת לתוכן עבור העיגול המרכזי
+let textContentPadding = 30; // רווח אחיד לכל העיגולים
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
+let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
 
 // === סטטוס 0 (דיפולטיבי) ===
 let centerDefaultSize = 180;
@@ -84,12 +84,12 @@ function setup() {
   pixelDensity(1);
   
   // יצירת סליידר לשליטה ברווח
-  paddingSlider = createSlider(minPadding, maxPadding, centerTextPadding);
+  paddingSlider = createSlider(minPadding, maxPadding, textContentPadding);
   paddingSlider.position(20, 20);
   paddingSlider.style('width', '200px');
   
   // הוספת תווית לסליידר
-  paddingLabel = createDiv('Center Text Padding: ' + centerTextPadding);
+  paddingLabel = createDiv('Text Padding: ' + textContentPadding);
   paddingLabel.position(230, 20);
   paddingLabel.style('color', 'white');
   paddingLabel.style('background-color', 'rgba(0, 0, 0, 0.5)');
@@ -204,8 +204,8 @@ function updateCircleSizesBasedOnContent() {
 
 function draw() {
   // עדכון ערך ה-padding לפי הסליידר
-  centerTextPadding = paddingSlider.value();
-  paddingLabel.html('Center Text Padding: ' + centerTextPadding);
+  textContentPadding = paddingSlider.value();
+  paddingLabel.html('Text Padding: ' + textContentPadding);
   
   let expandedSize = centerDefaultSize * growthMultiplier;
 
@@ -228,255 +228,304 @@ function draw() {
   stroke(0);
   strokeWeight(3);
 
-  if (status === 0 || status === 1) {
-    for (let i = 0; i < surroundingNodes.length; i++) {
-      let node = surroundingNodes[i];
-      node.currentX = lerp(node.currentX, node.targetX, easeOuter);
-      node.currentY = lerp(node.currentY, node.targetY, easeOuter);
-      let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
-      if (node.hoverTargetR !== undefined && i !== focusedNodeIndex) {
-        targetR = node.hoverTargetR;
-      }
-      let hoverElapsed = millis() - max(transitionStartTime, hoverStartTimes[i]);
-      let hoverDuration = (status === 2 && i === focusedNodeIndex) ? status2GrowDuration : hoverAnimationDuration;
-      let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
-      let easeHover = ultraEaseInOut(tHover);
-      node.currentR = lerp(node.currentR, targetR, easeHover);
+  // הצגת הקווים המחברים את העיגולים
+  for (let i = 0; i < surroundingNodes.length; i++) {
+    let node = surroundingNodes[i];
+    node.currentX = lerp(node.currentX, node.targetX, easeOuter);
+    node.currentY = lerp(node.currentY, node.targetY, easeOuter);
+    let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
+    if (node.hoverTargetR !== undefined && i !== focusedNodeIndex) {
+      targetR = node.hoverTargetR;
+    }
+    let hoverElapsed = millis() - max(transitionStartTime, hoverStartTimes[i]);
+    let hoverDuration = (status === 2 && i === focusedNodeIndex) ? status2GrowDuration : hoverAnimationDuration;
+    let tHover = constrain(hoverElapsed / hoverDuration, 0, 1);
+    let easeHover = ultraEaseInOut(tHover);
+    node.currentR = lerp(node.currentR, targetR, easeHover);
 
-      node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
-
-      node.displayX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
-      node.displayY = node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
-
-      line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
+    // Fade out הטקסט כאשר איננו במצב פוקוס
+    if ((status !== 2 || i !== focusedNodeIndex) && 
+        (status !== 1 || node !== centerNode)) {
+      node.contentAlpha = lerp(node.contentAlpha, 0, textFadeOutSpeed);
     }
 
-    for (let i = 0; i < surroundingNodes.length; i++) {
-      let node = surroundingNodes[i];
-      let shadowOffsetX = 3 * cos(radians(325));
-      let shadowOffsetY = 3 * sin(radians(325));
-      fill(0);
-      ellipse(
-        node.displayX + shadowOffsetX,
-        node.displayY + shadowOffsetY,
-        node.currentR
-      );
-      fill(node.col);
-      ellipse(node.displayX, node.displayY, node.currentR);
+    node.displayX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
+    node.displayY = node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
 
+    line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
+  }
+
+  // צייר עיגולים היקפיים (חוץ מהעיגול בפוקוס במצב 2)
+  for (let i = 0; i < surroundingNodes.length; i++) {
+    if (status === 2 && i === focusedNodeIndex) continue;
+    
+    let node = surroundingNodes[i];
+    let shadowOffsetX = 3 * cos(radians(325));
+    let shadowOffsetY = 3 * sin(radians(325));
+    fill(0);
+    ellipse(
+      node.displayX + shadowOffsetX,
+      node.displayY + shadowOffsetY,
+      node.currentR
+    );
+    fill(node.col);
+    ellipse(node.displayX, node.displayY, node.currentR);
+
+    push();
+    fill(0);
+    noStroke();
+    drawingContext.imageSmoothingEnabled = true;
+    drawingContext.imageSmoothingQuality = 'high';
+    let textSizeValue = min(node.currentR * textMaxSizePercentage, 20);
+    textSize(textSizeValue);
+    drawingContext.shadowColor = textShadowColor;
+    drawingContext.shadowBlur = textShadowBlur;
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    text(node.label, node.displayX, node.displayY);
+    pop();
+  }
+
+  // צייר עיגול מרכזי
+  push();
+  noStroke();
+  drawingContext.filter = 'none';
+  let shadowOffsetX = 3 * cos(radians(145));
+  let shadowOffsetY = 3 * sin(radians(145));
+  fill(0);
+  ellipse(
+    centerDisplayX + shadowOffsetX,
+    centerDisplayY + shadowOffsetY,
+    centerNode.currentR
+  );
+  pop();
+
+  fill(centerNode.col);
+  ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
+
+  // טיפול בטקסט בעיגול המרכזי
+  push();
+  fill(0);
+  noStroke();
+  drawingContext.imageSmoothingEnabled = true;
+  drawingContext.imageSmoothingQuality = 'high';
+  let centerTextSize = min(centerNode.currentR * 0.25, 36);
+  textSize(centerTextSize);
+  drawingContext.shadowColor = textShadowColor;
+  drawingContext.shadowBlur = textShadowBlur * 1.5;
+  drawingContext.shadowOffsetX = 0;
+  drawingContext.shadowOffsetY = 0;
+
+  // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
+  if (status === 1) {
+    let titleOffset = map(centerNode.contentAlpha, 0, 255, 0, -centerNode.currentR * 0.25);
+    text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
+
+    // הצגת תוכן במצב 1
+    if (centerNode.contentAlpha > 10) {
       push();
-      fill(0);
+      fill(0, centerNode.contentAlpha);
       noStroke();
-      drawingContext.imageSmoothingEnabled = true;
-      drawingContext.imageSmoothingQuality = 'high';
-      let textSizeValue = min(node.currentR * textMaxSizePercentage, 20);
-      textSize(textSizeValue);
-      drawingContext.shadowColor = textShadowColor;
-      drawingContext.shadowBlur = textShadowBlur;
-      drawingContext.shadowOffsetX = 0;
-      drawingContext.shadowOffsetY = 0;
-      text(node.label, node.displayX, node.displayY);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      rectMode(CENTER);
+      let textWidth = centerNode.currentR * 0.7;
+      let textHeight = centerNode.currentR * 0.6;
+      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + textContentPadding, textWidth, textHeight);
       pop();
     }
 
-    push();
-    noStroke();
-    drawingContext.filter = 'none';
-    let shadowOffsetX = 3 * cos(radians(145));
-    let shadowOffsetY = 3 * sin(radians(145));
-    fill(0);
-    ellipse(
-      centerDisplayX + shadowOffsetX,
-      centerDisplayY + shadowOffsetY,
-      centerNode.currentR
-    );
-    pop();
-
-    fill(centerNode.col);
-    ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
-
-    push();
-    fill(0);
-    noStroke();
-    drawingContext.imageSmoothingEnabled = true;
-    drawingContext.imageSmoothingQuality = 'high';
-    let centerTextSize = min(centerNode.currentR * 0.25, 36);
-    textSize(centerTextSize);
-    drawingContext.shadowColor = textShadowColor;
-    drawingContext.shadowBlur = textShadowBlur * 1.5;
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 0;
-
-    if (status === 1) {
-      let titleOffset = map(centerNode.contentAlpha, 0, 255, 0, -centerNode.currentR * 0.15);
-      text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
-
-      if (centerNode.contentAlpha > 10) {
-        push();
-        fill(0, centerNode.contentAlpha);
-        noStroke();
-        textSize(16);
-        textAlign(CENTER, CENTER);
-        rectMode(CENTER);
-        let textWidth = centerNode.currentR * 0.7;
-        let textHeight = centerNode.currentR * 0.6;
-        // שימוש בערך הסליידר ישירות
-        text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize + centerTextPadding, textWidth, textHeight);
-        pop();
-      }
-
-      let centerElapsed = millis() - transitionStartTime;
-      if (centerElapsed > textFadeInDelay) {
-        let fadeElapsed = centerElapsed - textFadeInDelay;
-        let alphaProgress = constrain(fadeElapsed / 500, 0, 1);
-        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * textFadeInSpeed);
-      } else {
-        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
-      }
-    } else {
-      text(centerNode.label, centerDisplayX, centerDisplayY);
-      centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, 0.1);
+    // Fade in טקסט במצב 1
+    let centerElapsed = millis() - transitionStartTime;
+    if (centerElapsed > textFadeInDelay) {
+      let fadeElapsed = centerElapsed - textFadeInDelay;
+      let alphaProgress = constrain(fadeElapsed / 500, 0, 1);
+      centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, alphaProgress * textFadeInSpeed);
     }
-    pop();
-  } else if (status === 2) {
-    for (let i = 0; i < surroundingNodes.length; i++) {
-      let node = surroundingNodes[i];
-      node.currentX = lerp(node.currentX, node.targetX, easeOuter);
-      node.currentY = lerp(node.currentY, node.targetY, easeOuter);
-      let targetR = (node.targetR !== undefined) ? node.targetR : node.baseR;
-
-      if (i === focusedNodeIndex) {
-        let hoverElapsed = millis() - transitionStartTime;
-        let tHover = constrain(hoverElapsed / status2GrowDuration, 0, 1);
-        let easeHover = ultraEaseInOut(tHover);
-        node.currentR = lerp(node.currentR, targetR, easeHover);
-
-        if (hoverElapsed > textFadeInDelay) {
-          let fadeElapsed = hoverElapsed - textFadeInDelay;
-          let alphaProgress = constrain(fadeElapsed / 500, 0, 1);
-          node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
-        } else {
-          node.contentAlpha = lerp(node.contentAlpha, 0, 0.1);
-        }
-      } else {
-        node.contentAlpha = lerp(node.contentAlpha, 0, 0.2);
-        let hoverElapsed = millis() - (node.shrinkStartTime || 0);
-        let tHover = constrain(hoverElapsed / status2ShrinkDuration, 0, 1);
-        let easeHover = ultraEaseInOut(tHover);
-        node.currentR = lerp(node.currentR, targetR, easeHover);
-      }
-
-      node.displayX = node.currentX + cos(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
-      node.displayY = node.currentY + sin(frameCount * wiggleSpeed + node.angleOffset) * wiggleRadius;
-      line(centerDisplayX, centerDisplayY, node.displayX, node.displayY);
-    }
-
-    push();
-    noStroke();
-    drawingContext.filter = 'none';
-    let shadowOffsetX = 3 * cos(radians(145));
-    let shadowOffsetY = 3 * sin(radians(145));
-    fill(0);
-    ellipse(
-      centerDisplayX + shadowOffsetX,
-      centerDisplayY + shadowOffsetY,
-      centerNode.currentR
-    );
-    pop();
-
-    fill(centerNode.col);
-    ellipse(centerDisplayX, centerDisplayY, centerNode.currentR);
-
-    push();
-    fill(0);
-    noStroke();
-    drawingContext.imageSmoothingEnabled = true;
-    drawingContext.imageSmoothingQuality = 'high';
-    let centerTextSize = min(centerNode.currentR * 0.25, 36);
-    textSize(centerTextSize);
-    drawingContext.shadowColor = textShadowColor;
-    drawingContext.shadowBlur = textShadowBlur * 1.5;
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 0;
+  } else {
+    // מצב רגיל או מצב 2 עבור העיגול המרכזי
     text(centerNode.label, centerDisplayX, centerDisplayY);
+    centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, textFadeOutSpeed);
+  }
+  pop();
+
+  // צייר את העיגול הממוקד במצב 2
+  if (status === 2 && focusedNodeIndex !== null) {
+    let node = surroundingNodes[focusedNodeIndex];
+    let shadowOffsetX = 3 * cos(radians(325));
+    let shadowOffsetY = 3 * sin(radians(325));
+
+    fill(0);
+    ellipse(
+      node.displayX + shadowOffsetX,
+      node.displayY + shadowOffsetY,
+      node.currentR
+    );
+
+    fill(node.col);
+    ellipse(node.displayX, node.displayY, node.currentR);
+
+    // חישוב offset לכותרת כמו בעיגול המרכזי
+    let titleOffset = map(node.contentAlpha, 0, 255, 0, -node.currentR * 0.25);
+
+    push();
+    fill(0);
+    noStroke();
+    drawingContext.imageSmoothingEnabled = true;
+    drawingContext.imageSmoothingQuality = 'high';
+    let focusedTextSize = min(node.currentR * 0.25, 36);
+    textSize(focusedTextSize);
+    drawingContext.shadowColor = textShadowColor;
+    drawingContext.shadowBlur = textShadowBlur * 1.5;
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    
+    // הצג את הכותרת עם offset כמו בעיגול המרכזי
+    text(node.label, node.displayX, node.displayY + titleOffset);
     pop();
 
-    for (let i = 0; i < surroundingNodes.length; i++) {
-      if (i === focusedNodeIndex) continue;
-      let node = surroundingNodes[i];
-      let shadowOffsetX = 3 * cos(radians(325));
-      let shadowOffsetY = 3 * sin(radians(325));
-      fill(0);
-      ellipse(
-        node.displayX + shadowOffsetX,
-        node.displayY + shadowOffsetY,
-        node.currentR
-      );
-      fill(node.col);
-      ellipse(node.displayX, node.displayY, node.currentR);
+    // הצג את התוכן של העיגול הממוקד
+    if (node.contentAlpha > 10) {
       push();
-      fill(0);
+      fill(0, node.contentAlpha);
       noStroke();
-      drawingContext.imageSmoothingEnabled = true;
-      drawingContext.imageSmoothingQuality = 'high';
-      let textSizeValue = min(node.currentR * textMaxSizePercentage, 20);
-      textSize(textSizeValue);
-      drawingContext.shadowColor = textShadowColor;
-      drawingContext.shadowBlur = textShadowBlur;
-      drawingContext.shadowOffsetX = 0;
-      drawingContext.shadowOffsetY = 0;
-      text(node.label, node.displayX, node.displayY);
+      textSize(16);
+      textAlign(CENTER, CENTER);
+      rectMode(CENTER);
+      let textWidth = node.currentR * 0.7;
+      let textHeight = node.currentR * 0.6;
+      
+      // שימוש באותו ערך padding כמו בעיגול המרכזי
+      text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + textContentPadding, textWidth, textHeight);
       pop();
     }
 
-    if (status === 2 && focusedNodeIndex !== null) {
-      let node = surroundingNodes[focusedNodeIndex];
-      let shadowOffsetX = 3 * cos(radians(325));
-      let shadowOffsetY = 3 * sin(radians(325));
-
-      fill(0);
-      ellipse(
-        node.displayX + shadowOffsetX,
-        node.displayY + shadowOffsetY,
-        node.currentR
-      );
-
-      fill(node.col);
-      ellipse(node.displayX, node.displayY, node.currentR);
-
-      let titleOffset = map(node.contentAlpha, 0, 255, 0, -node.currentR * 0.25);
-
-      push();
-      fill(0);
-      noStroke();
-      drawingContext.imageSmoothingEnabled = true;
-      drawingContext.imageSmoothingQuality = 'high';
-      let focusedTextSize = min(node.currentR * 0.25, 36);
-      textSize(focusedTextSize);
-      drawingContext.shadowColor = textShadowColor;
-      drawingContext.shadowBlur = textShadowBlur * 1.5;
-      drawingContext.shadowOffsetX = 0;
-      drawingContext.shadowOffsetY = 0;
-      text(node.label, node.displayX, node.displayY + titleOffset);
-      pop();
-
-      if (node.contentAlpha > 10) {
-        push();
-        fill(0, node.contentAlpha);
-        noStroke();
-        textSize(16);
-        textAlign(CENTER, CENTER);
-        rectMode(CENTER);
-        let textWidth = node.currentR * 0.7;
-        let textHeight = node.currentR * 0.6;
-        let adjustedPadding = textContentPadding * (node.currentR / 400);
-        text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize + adjustedPadding, textWidth, textHeight);
-        pop();
-      }
+    // Fade in הטקסט בעיגול הממוקד
+    let hoverElapsed = millis() - transitionStartTime;
+    if (hoverElapsed > textFadeInDelay) {
+      let fadeElapsed = hoverElapsed - textFadeInDelay;
+      let alphaProgress = constrain(fadeElapsed / 500, 0, 1);
+      node.contentAlpha = lerp(node.contentAlpha, 255, alphaProgress * textFadeInSpeed);
     }
   }
 
   handleHover();
+}
+
+function mousePressed() {
+  if (dist(mouseX, mouseY, centerNode.currentX, centerNode.currentY) < centerNode.currentR / 2) {
+    status = (status === 2) ? 1 : (status === 1 ? 0 : 1);
+    transitionStartTime = millis();
+
+    let indices = [...Array(surroundingNodes.length).keys()];
+    shuffle(indices, true);
+    let cumulativeDelay = 0;
+
+    if (status1CenterDelay === 0) {
+      centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
+    } else {
+      setTimeout(() => {
+        centerNode.targetR = status === 1 ? centerDefaultSize * growthMultiplier : centerDefaultSize;
+      }, status1CenterDelay);
+    }
+
+    for (let i = 0; i < indices.length; i++) {
+      let nodeIndex = indices[i];
+      let node = surroundingNodes[nodeIndex];
+      let angle = node.angle;
+      let distance = baseDistance + status1ExpansionAmount;
+      setTimeout(() => {
+        node.targetX = centerNode.baseX + cos(angle) * distance;
+        node.targetY = centerNode.baseY + sin(angle) * distance;
+        node.targetR = node.baseR;
+      }, cumulativeDelay);
+      cumulativeDelay += random(status1DelayRandomRange[0], status1DelayRandomRange[1]);
+    }
+    return;
+  }
+
+  for (let i = 0; i < surroundingNodes.length; i++) {
+    let node = surroundingNodes[i];
+    if (dist(mouseX, mouseY, node.currentX, node.currentY) < node.currentR / 2) {
+      if (status === 2 && focusedNodeIndex !== null && focusedNodeIndex !== i) {
+        surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
+        surroundingNodes[focusedNodeIndex].shrinkStartTime = millis();
+      }
+      pendingFocusedIndex = i;
+      status = 2;
+      transitionStartTime = millis();
+      node.targetX = width / 2;
+      node.targetY = height / 2;
+      node.targetR = node.baseR;
+
+      if (!isFocusSwitching) {
+        isFocusSwitching = true;
+        if (focusSwitchTimer !== null) {
+          clearTimeout(focusSwitchTimer);
+          focusSwitchTimer = null;
+        }
+        focusSwitchTimer = setTimeout(() => {
+          // כאשר עוברים מעיגול לעיגול, יש לדעוך את הטקסט של העיגול הקודם
+          if (focusedNodeIndex !== null) {
+            surroundingNodes[focusedNodeIndex].contentAlpha = 0;
+          }
+          
+          focusedNodeIndex = pendingFocusedIndex;
+          pendingFocusedIndex = null;
+          focusSwitchTimer = null;
+          transitionStartTime = millis();
+
+          // הגדרת הגודל הדינמי של העיגול הממוקד
+          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
+          console.log(`Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
+
+          isFocusSwitching = false;
+        }, 500);
+
+        if (previousFocusedIndex === null || previousFocusedIndex === i) {
+          // הגדרת הגודל הדינמי של העיגול הממוקד
+          surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
+          console.log(`Initial setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR}`);
+        }
+      }
+
+      for (let j = 0; j < surroundingNodes.length; j++) {
+        if (j !== i) {
+          let angle = surroundingNodes[j].angle;
+          let distance = baseDistance + random(30, 120);
+          let delay = j * random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
+          setTimeout(() => {
+            surroundingNodes[j].targetX = width / 2 + cos(angle) * distance;
+            surroundingNodes[j].targetY = height / 2 + sin(angle) * distance;
+            surroundingNodes[j].targetR = surroundingNodes[j].baseR;
+          }, delay);
+        }
+      }
+
+      centerNode.targetX = width / 2 + status2CenterOffset;
+      centerNode.targetY = height / 2;
+      centerNode.targetR = (centerDefaultSize * growthMultiplier) * status2CenterShrinkFactor;
+      return;
+    }
+  }
+
+  if (status === 2) {
+    status = 1;
+    if (focusedNodeIndex !== null) {
+      surroundingNodes[focusedNodeIndex].targetR = surroundingNodes[focusedNodeIndex].baseR;
+      // יש לדעוך את הטקסט של העיגול הממוקד כשחוזרים למצב 1
+      surroundingNodes[focusedNodeIndex].contentAlpha = 0;
+      focusedNodeIndex = null;
+    }
+    transitionStartTime = millis();
+    resetPositions();
+  } else if (status === 1) {
+    status = 0;
+    // יש לדעוך את הטקסט של העיגול המרכזי כשחוזרים למצב 0
+    centerNode.contentAlpha = 0;
+    transitionStartTime = millis();
+    resetPositions();
+  }
 }
 
 function resetPositions() {
