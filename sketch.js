@@ -286,21 +286,22 @@ function draw() {
         }
     }
   }
-   // Update center node text alpha separately if it's not handled in the loop above (e.g., transitioning away from status 1)
-   if (status !== 1 && centerNode.contentAlpha > 0) {
-       centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, textFadeOutSpeed);
-        if (centerNode.contentAlpha < 1) centerNode.contentAlpha = 0;
-   } else if (status === 1) {
-       // Handle fade-in for center node when status becomes 1 (if not already handled)
-        if (elapsedTime >= textFadeInDelay) {
-            let fadeProgress = constrain((elapsedTime - textFadeInDelay) / textFadeInDuration, 0, 1);
-            centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, fadeProgress);
-        } else {
-             if(centerNode.contentAlpha !== 0 && transitionStartTime === millis()) {
-                 centerNode.contentAlpha = 0;
-             }
+  
+  // Update center node text alpha separately if it's not handled in the loop above (e.g., transitioning away from status 1)
+  if (status !== 1 && centerNode.contentAlpha > 0) {
+     centerNode.contentAlpha = lerp(centerNode.contentAlpha, 0, textFadeOutSpeed);
+     if (centerNode.contentAlpha < 1) centerNode.contentAlpha = 0;
+  } else if (status === 1) {
+     // Handle fade-in for center node when status becomes 1 (if not already handled)
+     if (elapsedTime >= textFadeInDelay) {
+        let fadeProgress = constrain((elapsedTime - textFadeInDelay) / textFadeInDuration, 0, 1);
+        centerNode.contentAlpha = lerp(centerNode.contentAlpha, 255, fadeProgress);
+     } else {
+        if(centerNode.contentAlpha !== 0 && transitionStartTime === millis()) {
+           centerNode.contentAlpha = 0;
         }
-   }
+     }
+  }
 
 
   // --- Draw Elements ---
@@ -369,7 +370,6 @@ function drawNodeLabel(x, y, r, label) {
 }
 
 // Helper function to draw node text (label + content) for focused/center nodes
-// *** Updated for Top Alignment ***
 function drawNodeText(x, y, r, label, content, contentAlpha, showContent) {
   push();
   noStroke();
@@ -381,27 +381,15 @@ function drawNodeText(x, y, r, label, content, contentAlpha, showContent) {
   textAlign(CENTER, CENTER); // Center the label horizontally and vertically first
 
   // Calculate label Y position based on whether content will be shown
-  // If content is shown, the label needs to be pushed up from the center.
-  // Estimate the total height of the content block to find the right offset.
   let labelYOffset = 0;
-  let contentHeightEstimate = 0;
+  
   if (showContent) {
-      // Estimate content height roughly (more accurate would use textBounds if needed often)
-      push();
-      textSize(contentTextSize);
-      textAlign(CENTER, TOP);
-      // let bounds = textBounds(content, x, 0, r * 0.7); // Use textBounds if available & reliable
-      // contentHeightEstimate = bounds.h;
-      // Simple line count estimate:
-      contentHeightEstimate = content.split('\n').length * contentTextSize * 1.4; // Approx line height
-      pop();
-
-      // Push label up by roughly half the content height + padding, relative to center
-      labelYOffset = - (contentHeightEstimate / 2 + textContentPadding / 2);
+    // כאשר מציגים תוכן, הכותרת עולה למעלה באופן קבוע
+    labelYOffset = -r * 0.3; // offset קבוע של 30% מגודל העיגול
   }
+  
   // Draw the label at its calculated Y position
   text(label, x, y + labelYOffset);
-
 
   // --- Draw Content ---
   // Only draw content if alpha is significant and showContent flag is true
@@ -409,30 +397,29 @@ function drawNodeText(x, y, r, label, content, contentAlpha, showContent) {
     push();
     fill(0, contentAlpha); // Use calculated alpha for fade effect
     textSize(contentTextSize); // Use fixed content text size
-    textAlign(CENTER, TOP); // *** Align text to the TOP-CENTER ***
-    rectMode(CENTER); // Position the rectangle from its center
-
+    textAlign(CENTER, TOP); // Align text to the TOP-CENTER
+    
     // Calculate available width for the text box inside the circle
-    let textWidth = r * 0.75; // Use 75% of radius for width - adjust as needed
-    // Calculate the Y position for the TOP of the content box
-    // It should be below the bottom of the label + padding
-    let labelBottomApprox = y + labelYOffset + labelSize * 0.5; // Approx bottom of the label text
-    let contentY_Top = labelBottomApprox + textContentPadding; // *** Anchor point for the first line ***
-
-    // Calculate max height allowed based on circle radius below the anchor point
-    let availableHeight = (y + r * 0.5) - contentY_Top - 10; // Bottom edge of circle minus anchor - buffer
-
-    // Draw the content text wrapped within the calculated bounds
-    // The 'y' coordinate here is the TOP of the text box because of textAlign(..., TOP)
-    if (availableHeight > contentTextSize) { // Only draw if there's space for at least one line
-       text(content, x, contentY_Top, textWidth, availableHeight);
+    let textWidth = r * 0.75; // Use 75% of radius for width
+    
+    // המרחק הקבוע בין הכותרת לתוכן
+    let fixedPadding = textContentPadding;
+    
+    // חישוב מיקום התחלת הטקסט - תמיד באותו מרחק מהכותרת
+    // מיקום הכותרת + גובה הכותרת + רווח קבוע
+    let contentY_Top = y + labelYOffset + labelSize/2 + fixedPadding;
+    
+    // חישוב הגובה המקסימלי המותר לטקסט
+    let availableHeight = (y + r/2) - contentY_Top - 10; // מגבול העיגול התחתון עד למיקום התחלת הטקסט
+    
+    if (availableHeight > contentTextSize) { // וודא שיש מקום לפחות לשורה אחת
+      text(content, x, contentY_Top, textWidth, availableHeight);
     }
-
+    
     pop();
   }
   pop();
 }
-
 
 function mousePressed() {
     let clickedOnNode = false;
@@ -609,70 +596,4 @@ function resetSurroundingNodesToBase() {
 }
 
 // Helper function to move surrounding nodes outwards (Status 1 expansion)
-function moveSurroundingNodes(expansionAmount, expand = true) {
-    let cumulativeDelay = 0;
-    let indices = [...Array(surroundingNodes.length).keys()];
-    shuffle(indices, true); // p5 shuffle function
-
-    for (let i = 0; i < indices.length; i++) {
-        let nodeIndex = indices[i];
-        let node = surroundingNodes[nodeIndex];
-        let angle = node.angle;
-        let distance;
-        let targetX, targetY;
-
-        if (expand) {
-            distance = baseDistance + expansionAmount + random(-20, 20); // Add slight randomness
-            targetX = centerNode.baseX + cos(angle) * distance; // Expand from center's base
-            targetY = centerNode.baseY + sin(angle) * distance;
-        } else {
-            targetX = node.baseX; // Return to original base position
-            targetY = node.baseY;
-        }
-
-        setTimeout(() => {
-            node.targetX = targetX;
-            node.targetY = targetY;
-            node.targetR = node.baseR; // Reset to base size when moving out/back
-        }, cumulativeDelay);
-
-        cumulativeDelay += random(status1DelayRandomRange[0], status1DelayRandomRange[1]);
-    }
-    console.log(`Moving surrounding nodes. Expand: ${expand}`);
-}
-
-// Helper function to move non-focused nodes away in Status 2
-function moveOtherNodesAway(focusedIdx) {
-     let cumulativeDelay = 0;
-     console.log("Moving other nodes away for status 2");
-      for (let j = 0; j < surroundingNodes.length; j++) {
-        if (j === focusedIdx) continue; // Skip the node that is now focused
-
-        let otherNode = surroundingNodes[j];
-        // Calculate angle relative to the *new* center node position or just screen center?
-        // Using screen center might be visually more stable.
-        let angle = atan2(otherNode.baseY - height/2, otherNode.baseX - width/2); // Angle from screen center
-        let distance = width * 0.6 + random(-50, 50); // Push them further out towards edges
-
-        let targetX = width / 2 + cos(angle) * distance;
-        let targetY = height / 2 + sin(angle) * distance;
-
-        let delay = cumulativeDelay;
-        setTimeout(() => {
-            otherNode.targetX = targetX;
-            otherNode.targetY = targetY;
-            otherNode.targetR = otherNode.baseR * random(0.8, 1.1); // Keep base size or slightly vary
-            if (otherNode.contentAlpha > 0) otherNode.contentAlpha = 0; // Ensure text is hidden
-        }, delay);
-
-        cumulativeDelay += random(status2DelayRandomRange[0], status2DelayRandomRange[1]);
-    }
-}
-
-// Easing function
-function ultraEaseInOut(t) {
-  t = constrain(t, 0, 1);
-  return t < 0.5
-    ? pow(t * 2, easeInPower) / 2
-    : 1 - pow((1 - t) * 2, easeOutPower) / 2;
-}
+function moveSurroundingNodes
