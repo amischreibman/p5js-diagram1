@@ -509,7 +509,7 @@ function mousePressed() {
 
           // הגדרת הגודל הדינמי של העיגול הממוקד
           surroundingNodes[i].targetR = surroundingNodes[i].expandedR;
-          console.log(Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR});
+          console.log(Setting target size for circle ${i+1} to ${surroundingNodes[i].expandedR});)
 
           isFocusSwitching = false;
         }, 500);
