@@ -169,17 +169,9 @@ function updateCircleSizesBasedOnContent() {
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
 
     // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
-    let baseExpandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
+    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
 
-    // הערכת גובה טקסט - גס, אך יעזור
-    textSize(16); // גודל טקסט קבוע עבור הפסקה
-    let approximateLines = Math.ceil(textWidth(node.content) / (baseExpandedR * 0.7)); // הערכה גסה של מספר שורות
-    let approximateTextHeight = approximateLines * 20; // 20 פיקסלים לגובה שורה משוער
-
-    // התאמת גודל עיגול לפי גובה טקסט משוער
-    node.expandedR = max(baseExpandedR, approximateTextHeight + 100); // הוספת padding לגובה הטקסט
-
-    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}, Approx Text Height = ${approximateTextHeight}`);
+    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
   }
 }
 
@@ -302,14 +294,10 @@ function draw() {
       rectMode(CENTER);
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
-      // חישוב מרכז אנכי עבור התוכן - שיפור מרכוז אנכי
-      let titleTop = centerDisplayY + titleOffset;
-      let titleBottom = titleTop + centerTextSize;
-      let contentTop = titleBottom + textContentPadding;
-      let contentBottom = centerDisplayY + centerNode.currentR / 2;
-      let contentY = centerDisplayY // מרכז אנכי של העיגול
-
-          text(centerNode.content, centerDisplayX, contentY, textWidth, textHeight);
+      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
+      let titleBottom = centerDisplayY + titleOffset + centerTextSize;
+      let contentY = titleBottom + textContentPadding + textHeight / 2;
+      text(centerNode.content, centerDisplayX, contentY, textWidth, textHeight);
       pop();
     }
 
@@ -374,12 +362,9 @@ function draw() {
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
 
-      // חישוב מרכז אנכי עבור התוכן - שיפור מרכוז אנכי
-      let titleTop = node.displayY + titleOffset;
-      let titleBottom = titleTop + focusedTextSize;
-      let contentTop = titleBottom + textContentPadding;
-      let contentBottom = node.displayY + node.currentR / 2;
-      let contentY = node.displayY // מרכז אנכי של העיגול
+      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
+      let titleBottom = node.displayY + titleOffset + focusedTextSize;
+      let contentY = titleBottom + textContentPadding + textHeight / 2;
       text(node.content, node.displayX, contentY, textWidth, textHeight);
       pop();
     }
@@ -513,6 +498,7 @@ function mousePressed() {
         }
       }
     }
+  }
 }
 
 function ultraEaseInOut(t) {
