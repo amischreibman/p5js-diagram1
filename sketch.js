@@ -15,6 +15,7 @@ let textContentPadding = 30; // שליטה במרחק בין הכותרת לטק
 let textFadeInDelay = 200;
 let textFadeInSpeed = 0.5;
 let textFadeOutSpeed = 0.2; // מהירות ה-fade out של הטקסט
+let titleParagraphSpacing = 15; // מרווח בין הכותרת לפסקה
 
 // === סטטוס 0 (דיפולטיבי) ===
 let centerDefaultSize = 180;
@@ -169,9 +170,17 @@ function updateCircleSizesBasedOnContent() {
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
 
     // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
-    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
+    let baseExpandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
 
-    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
+    // הערכת גובה טקסט - גס, אך יעזור
+    textSize(16); // גודל טקסט קבוע עבור הפסקה
+    let approximateLines = Math.ceil(textWidth(node.content) / (baseExpandedR * 0.7)); // הערכה גסה של מספר שורות
+    let approximateTextHeight = approximateLines * 20; // 20 פיקסלים לגובה שורה משוער
+
+    // התאמת גודל עיגול לפי גובה טקסט משוער
+    node.expandedR = max(baseExpandedR, approximateTextHeight + 100); // הוספת padding לגובה הטקסט
+
+    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}, Approx Text Height = ${approximateTextHeight}`);
   }
 }
 
@@ -290,14 +299,28 @@ function draw() {
       fill(0, centerNode.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, TOP); // שינוי היישור האנכי ל-TOP
+      textAlign(CENTER, CENTER);
       rectMode(CENTER);
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
-      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
-      let titleBottom = centerDisplayY + titleOffset + centerTextSize;
-      let contentY = titleBottom + textContentPadding + 8; // הוספת קצת ריווח
-      text(centerNode.content, centerDisplayX, contentY, textWidth, textHeight);
+      // חישוב מרכז אנכי עבור התוכן
+      let titleTop = centerDisplayY + titleOffset;
+      let titleBottom = titleTop + centerTextSize;
+      let contentTop = titleBottom + titleParagraphSpacing; // השתמשנו ב-titleParagraphSpacing במקום textContentPadding
+      let contentBottom = centerDisplayY + centerNode.currentR / 2;
+      let contentY = centerDisplayY; // מרכז אנכי של העיגול
+      text(centerNode.content, centerDisplayX, contentY + verticalOffset, textWidth, textHeight);
+
+        // **DEBUGGING: Draw rectangle around text and point at circle center**
+        stroke(255, 0, 0); // Red color for debug
+        noFill();
+        let rectX = centerDisplayX;
+        let rectY = (contentY + verticalOffset); // Top of the text box is now adjusted by verticalOffset
+        rect(rectX, contentY + verticalOffset, textWidth, textHeight);
+
+        fill(0, 0, 255); // Blue point for circle center
+        noStroke();
+        ellipse(centerDisplayX, centerDisplayY, 5, 5);
       pop();
     }
 
@@ -357,15 +380,28 @@ function draw() {
       fill(0, node.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, TOP); // שינוי היישור האנכי ל-TOP
+      textAlign(CENTER, CENTER);
       rectMode(CENTER);
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
+      // חישוב מרכז אנכי עבור התוכן
+      let titleTop = node.displayY + titleOffset;
+      let titleBottom = titleTop + focusedTextSize;
+      let contentTop = titleBottom + titleParagraphSpacing; // השתמשנו ב-titleParagraphSpacing במקום textContentPadding
+      let contentBottom = node.displayY + node.currentR / 2;
+      let contentY = node.displayY // מרכז אנכי של העיגול
+      text(node.content, node.displayX, contentY + verticalOffset, textWidth, textHeight);
 
-      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
-      let titleBottom = node.displayY + titleOffset + focusedTextSize;
-      let contentY = titleBottom + textContentPadding + 8; // הוספת קצת ריווח
-      text(node.content, node.displayX, contentY, textWidth, textHeight);
+        // **DEBUGGING: Draw rectangle around text and point at circle center**
+        stroke(255, 0, 0); // Red color for debug
+        noFill();
+        let rectX = node.displayX;
+        let rectY = (contentY + verticalOffset); // Top of the text box is now adjusted by verticalOffset
+        rect(rectX, contentY + verticalOffset, textWidth, textHeight);
+
+        fill(0, 0, 255); // Blue point for circle center
+        noStroke();
+        ellipse(node.displayX, node.displayY, 5, 5);
       pop();
     }
 
@@ -498,7 +534,6 @@ function mousePressed() {
         }
       }
     }
-  }
 }
 
 function ultraEaseInOut(t) {
@@ -510,4 +545,3 @@ function ultraEaseInOut(t) {
     return 1 - 0.5 * abs(pow(2 - 2 * t, p));
   }
 }
-}}
