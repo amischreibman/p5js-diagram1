@@ -169,9 +169,17 @@ function updateCircleSizesBasedOnContent() {
     let sizeRatio = (normalizedLength - minTextLength) / (maxTextLength - minTextLength);
 
     // קביעת גודל מינימלי גדול יותר כדי להבטיח מספיק מקום לטקסט וכותרת
-    node.expandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
+    let baseExpandedR = max(status2MinExpandedSize + (sizeRange * sizeRatio), 350);
 
-    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}`);
+    // הערכת גובה טקסט - גס, אך יעזור
+    textSize(16); // גודל טקסט קבוע עבור הפסקה
+    let approximateLines = Math.ceil(textWidth(node.content) / (baseExpandedR * 0.7)); // הערכה גסה של מספר שורות
+    let approximateTextHeight = approximateLines * 20; // 20 פיקסלים לגובה שורה משוער
+
+    // התאמת גודל עיגול לפי גובה טקסט משוער
+    node.expandedR = max(baseExpandedR, approximateTextHeight + 100); // הוספת padding לגובה הטקסט
+
+    console.log(`Circle ${i+1}: Text length = ${textLength}, Expanded size = ${node.expandedR}, Approx Text Height = ${approximateTextHeight}`);
   }
 }
 
@@ -290,14 +298,29 @@ function draw() {
       fill(0, centerNode.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, TOP); // שינוי היישור האנכי ל-TOP
+      textAlign(CENTER, CENTER);
       rectMode(CENTER);
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
-      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
-      let titleBottom = centerDisplayY + titleOffset + centerTextSize;
-      let contentY = titleBottom + textContentPadding + 8; // הוספת קצת ריווח
-      text(centerNode.content, centerDisplayX, contentY, textWidth, textHeight);
+      let contentY = centerDisplayY; // נשתמש עדיין במרכז העיגול כנקודת ייחוס
+
+          let textAsc = textAscent();
+          let textDesc = textDescent();
+          let actualTextHeight = textAsc + textDesc;
+          let verticalOffset = -actualTextHeight / 2; // הזזה אנכית למעלה כדי למרכז
+
+          text(centerNode.content, centerDisplayX, contentY + verticalOffset, textWidth, textHeight);
+
+        // **DEBUGGING: Draw rectangle around text and point at circle center**
+        stroke(255, 0, 0); // Red color for debug
+        noFill();
+        let rectX = centerDisplayX;
+        let rectY = (contentY + verticalOffset); // Top of the text box is now adjusted by verticalOffset
+        rect(rectX, contentY + verticalOffset, textWidth, textHeight);
+
+        fill(0, 0, 255); // Blue point for circle center
+        noStroke();
+        ellipse(centerDisplayX, centerDisplayY, 5, 5);
       pop();
     }
 
@@ -357,15 +380,29 @@ function draw() {
       fill(0, node.contentAlpha);
       noStroke();
       textSize(16);
-      textAlign(CENTER, TOP); // שינוי היישור האנכי ל-TOP
+      textAlign(CENTER, CENTER);
       rectMode(CENTER);
       let textWidth = node.currentR * 0.7;
       let textHeight = node.currentR * 0.6;
+      let contentY = node.displayY; // נשתמש עדיין במרכז העיגול כנקודת ייחוס
 
-      // מיקום אנכי של התוכן - מתחת לכותרת עם ריווח
-      let titleBottom = node.displayY + titleOffset + focusedTextSize;
-      let contentY = titleBottom + textContentPadding + 8; // הוספת קצת ריווח
-      text(node.content, node.displayX, contentY, textWidth, textHeight);
+          let textAsc = textAscent();
+          let textDesc = textDescent();
+          let actualTextHeight = textAsc + textDesc;
+          let verticalOffset = -actualTextHeight / 2; // הזזה אנכית למעלה כדי למרכז
+
+          text(node.content, node.displayX, contentY + verticalOffset, textWidth, textHeight);
+
+        // **DEBUGGING: Draw rectangle around text and point at circle center**
+        stroke(255, 0, 0); // Red color for debug
+        noFill();
+        let rectX = node.displayX;
+        let rectY = (contentY + verticalOffset); // Top of the text box is now adjusted by verticalOffset
+        rect(rectX, contentY + verticalOffset, textWidth, textHeight);
+
+        fill(0, 0, 255); // Blue point for circle center
+        noStroke();
+        ellipse(node.displayX, node.displayY, 5, 5);
       pop();
     }
 
@@ -498,7 +535,6 @@ function mousePressed() {
         }
       }
     }
-  }
 }
 
 function ultraEaseInOut(t) {
