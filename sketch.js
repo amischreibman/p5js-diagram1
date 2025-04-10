@@ -281,23 +281,24 @@ function draw() {
   // טיפול בטקסט במצב 1 - העיגול המרכזי מוגדל
   if (status === 1) {
     // קביעת offset קבוע לכותרת, ללא תלות באלפא של התוכן
-    let titleOffset = -centerNode.currentR * 0.25;
-    text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset);
+let titleOffset = -node.currentR * 0.25; // מרחק הכותרת
+text(node.label, node.displayX, node.displayY + titleOffset); // הצגת הכותרת
 
-    // הצגת תוכן במצב 1
-    if (centerNode.contentAlpha > 10) {
-      push();
-      fill(0, centerNode.contentAlpha);
-      noStroke();
-      textSize(16);
-      textAlign(CENTER, CENTER);
-      rectMode(CENTER);
-      let textWidth = centerNode.currentR * 0.7;
-      let textHeight = centerNode.currentR * 0.6;
-      // שימוש ב-titleOffset ובגודל הטקסט של הכותרת כדי למקם את התוכן עם ריווח קבוע
-      text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize / 2 + textContentPadding + 8, textWidth, textHeight);
-      pop();
-    }
+// הצגת התוכן של העיגול הממוקד
+if (node.contentAlpha > 10) {
+  push();
+  fill(0, node.contentAlpha);
+  noStroke();
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  rectMode(CENTER);
+  let textWidth = node.currentR * 0.7; // רוחב הפסקה
+  let textHeight = node.currentR * 0.6; // גובה הפסקה
+
+  // שימוש ב-padding קבוע כדי למקם את הפסקה מתחת לכותרת
+  text(node.content, node.displayX, node.displayY + titleOffset + focusedTextSize / 2 + textContentPadding + 8, textWidth, textHeight);
+  pop();
+}
 
     // Fade in טקסט במצב 1
     let centerElapsed = millis() - transitionStartTime;
@@ -331,23 +332,24 @@ function draw() {
     ellipse(node.displayX, node.displayY, node.currentR);
 
     // חישוב offset קבוע לכותרת - לא תלוי באלפא כמו קודם אלא קבוע
-    let titleOffset = -node.currentR * 0.25;
+let titleOffset = -centerNode.currentR * 0.25; // מרחק הכותרת
+text(centerNode.label, centerDisplayX, centerDisplayY + titleOffset); // הצגת הכותרת
 
-    push();
-    fill(0);
-    noStroke();
-    drawingContext.imageSmoothingEnabled = true;
-    drawingContext.imageSmoothingQuality = 'high';
-    let focusedTextSize = min(node.currentR * 0.25, 36);
-    textSize(focusedTextSize);
-    drawingContext.shadowColor = textShadowColor;
-    drawingContext.shadowBlur = textShadowBlur * 1.5;
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 0;
+// הצגת תוכן במצב 1
+if (centerNode.contentAlpha > 10) {
+  push();
+  fill(0, centerNode.contentAlpha);
+  noStroke();
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  rectMode(CENTER);
+  let textWidth = centerNode.currentR * 0.7; // רוחב הפסקה
+  let textHeight = centerNode.currentR * 0.6; // גובה הפסקה
 
-    // הצג את הכותרת עם offset קבוע
-    text(node.label, node.displayX, node.displayY + titleOffset);
-    pop();
+  // שימוש ב-padding קבוע כדי למקם את הפסקה מתחת לכותרת
+  text(centerNode.content, centerDisplayX, centerDisplayY + titleOffset + centerTextSize / 2 + textContentPadding + 8, textWidth, textHeight);
+  pop();
+}
 
     // הצג את התוכן של העיגול הממוקד
     if (node.contentAlpha > 10) {
