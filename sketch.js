@@ -295,7 +295,11 @@ function draw() {
       let textWidth = centerNode.currentR * 0.7;
       let textHeight = centerNode.currentR * 0.6;
       // חישוב מרכז אנכי עבור התוכן
-      let contentY = centerDisplayY + (centerNode.currentR * 0.5) / 2;
+      let titleTop = centerDisplayY + titleOffset;
+      let titleBottom = titleTop + centerTextSize;
+      let contentTop = titleBottom + textContentPadding;
+      let contentBottom = centerDisplayY + centerNode.currentR / 2;
+      let contentY = (contentTop + contentBottom) / 2;
       text(centerNode.content, centerDisplayX, contentY, textWidth, textHeight);
       pop();
     }
@@ -362,7 +366,11 @@ function draw() {
       let textHeight = node.currentR * 0.6;
 
       // חישוב מרכז אנכי עבור התוכן
-      let contentY = node.displayY + (node.currentR * 0.5) / 2;
+      let titleTop = node.displayY + titleOffset;
+      let titleBottom = titleTop + focusedTextSize;
+      let contentTop = titleBottom + textContentPadding;
+      let contentBottom = node.displayY + node.currentR / 2;
+      let contentY = (contentTop + contentBottom) / 2;
       text(node.content, node.displayX, contentY, textWidth, textHeight);
       pop();
     }
