@@ -544,4 +544,4 @@ function ultraEaseInOut(t) {
     let p = easeOutPower;
     return 1 - 0.5 * abs(pow(2 - 2 * t, p));
   }
-}
+}}
